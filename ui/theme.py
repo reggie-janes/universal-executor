@@ -27,8 +27,7 @@ def _load_fonts(assets_dir: Path) -> None:
     if not font_path.exists():
         return
     with dpg.font_registry():
-        with dpg.font(str(font_path), BASE_FONT_SIZE) as default_font:
-            dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+        default_font = dpg.add_font(str(font_path), BASE_FONT_SIZE)
     dpg.bind_font(default_font)
 
 

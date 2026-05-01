@@ -36,7 +36,8 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
     _state["rescan"] = rescan
 
     with dpg.window(tag=MAIN_WINDOW, label="Universal Executor",
-                    no_title_bar=True, no_move=True, no_resize=True, no_collapse=True):
+                    no_title_bar=True, no_move=True, no_resize=True, no_collapse=True,
+                    no_scrollbar=True):
         with dpg.group(horizontal=True, tag=TOP_BAR):
             dpg.add_text("Tool")
             dpg.add_combo(
@@ -51,10 +52,27 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
         dpg.add_group(tag=DYNAMIC_AREA)
 
     dpg.set_primary_window(MAIN_WINDOW, True)
+    _bind_no_scrollbar_theme(MAIN_WINDOW)
     _ensure_wheel_handler()
     _ensure_resize_handler()
     if tools:
         _select_tool(tools[0])
+
+
+def _bind_no_scrollbar_theme(item: str) -> None:
+    """Force scrollbar size to 0 for ``item``.
+
+    The ``no_scrollbar=True`` window flag does not reliably suppress the
+    transient scrollbar that appears for a frame or two when the new tool's
+    content is taller than the previous viewport (before the resize callback
+    fires and grows the viewport). Setting ``ScrollbarSize`` to 0 on this
+    window only makes the bar zero pixels wide — invisible — without
+    affecting other windows like the error modal.
+    """
+    with dpg.theme() as no_sb:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_style(dpg.mvStyleVar_ScrollbarSize, 0)
+    dpg.bind_item_theme(item, no_sb)
 
 
 def _ensure_wheel_handler() -> None:
