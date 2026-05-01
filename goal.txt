@@ -1,0 +1,62 @@
+
+below are the contents of Python file is a demo of a required module, written in pseudocode somewhat similar to C++
+
+our goal is that other module should import it in a way, that enables generic automation; may be using reflection
+that other module will automatically create dearpygui layout, that will be able to capture all input vars,
+provide buttons to execute exported API functions and print results into output controls
+
+
+public input variables a and b are exported, and also have descriptions ("var_a" and "var_b")
+private variable C is not exported
+application will have labels and input fields for a and b, for example label "var a" and input for variable a
+OR place them in a table, that is up to you
+
+this example module exports 3 functions: plus, minus and some_func; each has a description (e.g. plus() - "function plus")
+private function helper is not exported
+that means application will have three buttons with caption "function plus", "function for minus", etc.
+when one of them is clicked, app will provide actual values of input fields to the public input variables and execute corresponding function
+
+after execution public output vars y and z will be computed, and should be displayed - in label+input fields OR another table
+
+of course it is simpler to just hardcode user interface, but i want our application to be able to scan a folder with many such tool modules
+and automatically import them
+at the top of app window there should be a combo box to select a module - gui will be updated and user will be able to execute python via kind of nice ui
+
+give dearpygui modern web-like style, use themes an so on...
+use icon and roboto fonts from assets/ directory
+make sure it adapts to large hi res screens
+it should work on windows and linux
+
+the main goal is that creater of a tool should be able to create it without much knowledge of Python and our app internals
+if reflection and annotations inside the single file with code will be hard to do, try another variant, e.g. a separate file with a simple format that will provide names of vars and their descriptions etc
+
+project should be runnable as 'uv run python main.py'
+
+demo_tool.py
+tool_name = "Simple calculator"
+
+private:
+    C = 10
+    def helper():
+        return a * 2
+    
+public input:
+    a: int "var a"
+    b: int "var b"
+
+public output:
+    y: int "var y"
+    z: int "var z"
+  
+public functions:
+    def plus(): "function plus"
+        z = a + b
+        y = 0
+
+    def minus(): "function for minus"
+        z = a - b
+        y = a * b + 2
+
+    def some_func(): "just some function"
+        z = 0
+        y = a + helper() - C

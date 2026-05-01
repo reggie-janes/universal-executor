@@ -1,0 +1,64 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Python 3",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"features": {
+		"ghcr.io/va-h/devcontainers-features/uv:1": {}
+	},
+
+	"mounts": [
+		{
+			"source": "${localEnv:HOME}${localEnv:USERPROFILE}/.claude",
+			"target": "/home/dev/.claude",
+			"type": "bind"
+		},
+		{
+			"source": "${localEnv:HOME}${localEnv:USERPROFILE}/.claude.json",
+			"target": "/home/dev/.claude.json",
+			"type": "bind"
+		}
+	],
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	
+	"initializeCommand": "bash .devcontainer/host-init.sh",
+
+	"remoteEnv": {
+        "GIT_USER_NAME_OVERRIDE": "${localEnv:GIT_USER_NAME_OVERRIDE}",
+        "GIT_USER_EMAIL_OVERRIDE": "${localEnv:GIT_USER_EMAIL_OVERRIDE}",
+        "CONTAINER_WORKSPACE_FOLDER": "${containerWorkspaceFolder}"
+    },
+
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
+    "postStartCommand": "bash .devcontainer/post-start.sh",
+	
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff",
+				"anthropics.claude-code",
+				"vscode-icons-team.vscode-icons"
+			],
+			"settings": {
+				"workbench.iconTheme": "vscode-icons",
+				"remote.restoreForwardedPorts": false
+			}
+		}
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+	
+	"containerUser": "dev",
+	"remoteUser": "dev",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+}

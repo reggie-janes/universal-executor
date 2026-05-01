@@ -1,0 +1,17 @@
+[project]
+name = "universal-executor"
+version = "0.1.0"
+description = "Auto-generated DearPyGui frontend for plain-Python tool modules"
+requires-python = ">=3.11"
+dependencies = [
+    "dearpygui>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tools"]
+python_files = ["*_test.py"]
