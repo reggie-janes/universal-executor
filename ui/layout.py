@@ -245,14 +245,40 @@ def _build_outputs_section(tool: ToolSpec) -> None:
                 _state["output_tags"][var.name] = tag
 
 
+_SI_SUFFIXES = {
+    "y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15,
+    "p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6,
+    "m": 1e-3,
+    "k": 1e3, "K": 1e3,
+    "M": 1e6, "G": 1e9, "T": 1e12,
+    "P": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24,
+}
+
+
+def _parse_si_number(text: str) -> float:
+    """Parse ``text`` as a number, optionally with a single SI suffix.
+
+    Examples: "10k" -> 10000, "2.5M" -> 2_500_000, "5m" -> 0.005.
+    Note that ``m`` is milli and ``M`` is mega — case matters.
+    """
+    text = text.strip()
+    if not text:
+        return 0.0
+    last = text[-1]
+    if last in _SI_SUFFIXES and len(text) > 1:
+        return float(text[:-1].strip()) * _SI_SUFFIXES[last]
+    return float(text)
+
+
 def _make_input_widget(var: VarSpec, module) -> int | str:
     current = getattr(module, var.name, None)
     kind = var.kind
     if kind is int:
-        return dpg.add_input_int(default_value=int(current or 0), width=NUMBER_FIELD_WIDTH)
+        return dpg.add_input_text(default_value=str(int(current or 0)),
+                                  width=NUMBER_FIELD_WIDTH)
     if kind is float:
-        return dpg.add_input_float(default_value=float(current or 0.0),
-                                   format="%.6g", width=NUMBER_FIELD_WIDTH)
+        return dpg.add_input_text(default_value=format(float(current or 0.0), ".6g"),
+                                  width=NUMBER_FIELD_WIDTH)
     if kind is bool:
         return dpg.add_checkbox(default_value=bool(current))
     if is_enum_kind(kind):
@@ -276,7 +302,11 @@ def _push_inputs(tool: ToolSpec) -> None:
         tag = _state["input_tags"][var.name]
         raw = dpg.get_value(tag)
         kind = var.kind
-        if is_enum_kind(kind):
+        if kind is int:
+            value = int(round(_parse_si_number(raw)))
+        elif kind is float:
+            value = _parse_si_number(raw)
+        elif is_enum_kind(kind):
             value = kind[raw] if raw in kind.__members__ else getattr(tool.module, var.name)
         elif is_choices_kind(kind):
             value = next((c for c in kind if str(c) == raw), raw)
