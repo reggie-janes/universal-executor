@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import math
-import traceback
 from typing import Any, Callable
 
 import dearpygui.dearpygui as dpg
@@ -10,7 +9,7 @@ import dearpygui.dearpygui as dpg
 import settings
 
 from . import theme
-from .scanner import FuncSpec, ToolSpec, VarSpec, is_choices_kind, is_enum_kind
+from .scanner import ToolSpec
 
 
 MAIN_WINDOW = "uex_main"
@@ -38,6 +37,12 @@ _state: dict[str, Any] = {
     "output_tags": {},
     "rescan": None,
 }
+
+# Imported after _state and constants because widgets/runner do
+# ``from . import layout`` and read these attributes from their function
+# bodies — accessing them at import time would see a partial module.
+from .widgets import build_inputs_section, build_outputs_section  # noqa: E402
+from .runner import make_run_cb  # noqa: E402
 
 
 def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) -> None:
@@ -270,16 +275,16 @@ def _select_tool(tool: ToolSpec):
     else:
         with dpg.group(horizontal=True, parent=parent):
             for fn in tool.funcs:
-                dpg.add_button(label=fn.description, callback=_make_run_cb(fn))
+                dpg.add_button(label=fn.description, callback=make_run_cb(fn))
 
     # Inputs (left) and Outputs (right) side-by-side.
     section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH
     with dpg.group(horizontal=True, parent=parent):
         with dpg.group(width=section_width):
-            _build_inputs_section(tool)
+            build_inputs_section(tool)
         dpg.add_spacer(width=24)
         with dpg.group(width=section_width):
-            _build_outputs_section(tool)
+            build_outputs_section(tool)
 
     dpg.add_separator(parent=parent)
     dpg.add_text("Ready.", tag=STATUS, parent=parent, color=DIM_COLOR)
@@ -287,149 +292,3 @@ def _select_tool(tool: ToolSpec):
     # Resize handler may fire before the new layout has settled — re-measure
     # a couple of frames later to catch the final size.
     dpg.set_frame_callback(dpg.get_frame_count() + 2, _fit_viewport_to_content)
-
-
-def _build_inputs_section(tool: ToolSpec) -> None:
-    dpg.add_text("Inputs")
-    if not tool.inputs:
-        dpg.add_text("(no inputs)", color=DIM_COLOR)
-        return
-    with dpg.table(header_row=False, resizable=False,
-                   policy=dpg.mvTable_SizingFixedFit,
-                   borders_innerH=False, borders_innerV=False):
-        dpg.add_table_column(width_fixed=True, init_width_or_weight=LABEL_COLUMN_WIDTH)
-        dpg.add_table_column()
-        for var in tool.inputs:
-            with dpg.table_row():
-                dpg.add_text(var.description)
-                tag = _make_input_widget(var, tool.module)
-                _state["input_tags"][var.name] = tag
-
-
-def _build_outputs_section(tool: ToolSpec) -> None:
-    dpg.add_text("Outputs")
-    if not tool.outputs:
-        dpg.add_text("(no outputs)", color=DIM_COLOR)
-        return
-    with dpg.table(header_row=False, resizable=False,
-                   policy=dpg.mvTable_SizingFixedFit,
-                   borders_innerH=False, borders_innerV=False):
-        dpg.add_table_column(width_fixed=True, init_width_or_weight=LABEL_COLUMN_WIDTH)
-        dpg.add_table_column()
-        for var in tool.outputs:
-            with dpg.table_row():
-                dpg.add_text(var.description)
-                tag = _make_output_widget(var, tool.module)
-                _state["output_tags"][var.name] = tag
-
-
-_SI_SUFFIXES = {
-    "y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15,
-    "p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6,
-    "m": 1e-3,
-    "k": 1e3, "K": 1e3,
-    "M": 1e6, "G": 1e9, "T": 1e12,
-    "P": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24,
-}
-
-
-def _parse_si_number(text: str) -> float:
-    """Parse ``text`` as a number, optionally with a single SI suffix.
-
-    Examples: "10k" -> 10000, "2.5M" -> 2_500_000, "5m" -> 0.005.
-    Note that ``m`` is milli and ``M`` is mega — case matters.
-    """
-    text = text.strip()
-    if not text:
-        return 0.0
-    last = text[-1]
-    if last in _SI_SUFFIXES and len(text) > 1:
-        return float(text[:-1].strip()) * _SI_SUFFIXES[last]
-    return float(text)
-
-
-def _make_input_widget(var: VarSpec, module) -> int | str:
-    current = getattr(module, var.name, None)
-    kind = var.kind
-    if kind is int:
-        return dpg.add_input_text(default_value=str(int(current or 0)),
-                                  width=NUMBER_FIELD_WIDTH)
-    if kind is float:
-        return dpg.add_input_text(default_value=format(float(current or 0.0), ".6g"),
-                                  width=NUMBER_FIELD_WIDTH)
-    if kind is bool:
-        return dpg.add_checkbox(default_value=bool(current))
-    if is_enum_kind(kind):
-        items = [m.name for m in kind]
-        default = current.name if current is not None and current.__class__ is kind else (items[0] if items else "")
-        return dpg.add_combo(items=items, default_value=default, width=COMBO_FIELD_WIDTH)
-    if is_choices_kind(kind):
-        items = [str(c) for c in kind]
-        default = str(current) if current is not None else (items[0] if items else "")
-        return dpg.add_combo(items=items, default_value=default, width=COMBO_FIELD_WIDTH)
-    return dpg.add_input_text(default_value=str(current), readonly=True, width=TEXT_FIELD_WIDTH)
-
-
-def _make_output_widget(var: VarSpec, module) -> int | str:
-    current = getattr(module, var.name, "")
-    return dpg.add_input_text(default_value=str(current), readonly=True, width=TEXT_FIELD_WIDTH)
-
-
-def _push_inputs(tool: ToolSpec) -> None:
-    for var in tool.inputs:
-        tag = _state["input_tags"][var.name]
-        raw = dpg.get_value(tag)
-        kind = var.kind
-        if kind is int:
-            value = int(round(_parse_si_number(raw)))
-        elif kind is float:
-            value = _parse_si_number(raw)
-        elif is_enum_kind(kind):
-            value = kind[raw] if raw in kind.__members__ else getattr(tool.module, var.name)
-        elif is_choices_kind(kind):
-            value = next((c for c in kind if str(c) == raw), raw)
-        else:
-            value = raw
-        setattr(tool.module, var.name, value)
-
-
-def _pull_outputs(tool: ToolSpec) -> None:
-    for var in tool.outputs:
-        tag = _state["output_tags"][var.name]
-        value = getattr(tool.module, var.name)
-        dpg.set_value(tag, str(value))
-
-
-def _make_run_cb(fn: FuncSpec):
-    """Build a DPG callback that ignores all args and invokes ``fn``.
-
-    DPG passes (sender, app_data, user_data) positionally based on the
-    callback's arity, so closures are safer than lambda default-arg tricks.
-    """
-    def _cb(*_args, **_kwargs):
-        _run(fn)
-    return _cb
-
-
-def _run(fn: FuncSpec) -> None:
-    tool = _state["current"]
-    if tool is None:
-        return
-    dpg.set_value(STATUS, f"Running {fn.name}()...")
-    try:
-        _push_inputs(tool)
-        fn.callable()
-        _pull_outputs(tool)
-        dpg.set_value(STATUS, f"Last run: {fn.name}() OK")
-    except Exception:
-        tb = traceback.format_exc()
-        dpg.set_value(STATUS, f"Last run: {fn.name}() FAILED")
-        _show_error_modal(f"Error in {fn.name}()", tb)
-
-
-def _show_error_modal(title: str, body: str) -> None:
-    with dpg.window(label=title, modal=True, show=True,
-                    width=720, height=420, pos=(80, 80)) as win:
-        dpg.add_text(body, wrap=680)
-        dpg.add_separator()
-        dpg.add_button(label="Close", callback=lambda *_a, **_kw: dpg.delete_item(win))
