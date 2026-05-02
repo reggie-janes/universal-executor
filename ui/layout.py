@@ -40,6 +40,10 @@ _state: dict[str, Any] = {
     "output_tags": {},
     "rescan": None,
     "last_func": None,
+    # Per-tool snapshot taken on tool switch so unsubmitted input edits and the
+    # last-action label survive when the user returns to a tool. Keyed by
+    # tool.name -> {"inputs": {var_name: raw_widget_value}, "last_func_name": str | None}.
+    "tool_states": {},
 }
 
 # Imported after _state and constants because widgets/runner do
@@ -231,6 +235,7 @@ def _on_tool_changed(sender, app_data):
 
 
 def _on_reload():
+    _save_current_tool_state()
     new_tools = _state["rescan"]()
     _state["tools"] = new_tools
     dpg.configure_item(TOOL_COMBO, items=[t.name for t in new_tools])
@@ -303,7 +308,46 @@ def _fit_viewport_to_content(*_args, **_kwargs):
                 dpg.configure_item(TOP_SPACER, width=new_spacer)
 
 
+def _save_current_tool_state() -> None:
+    """Snapshot the currently selected tool's widget values and last action.
+
+    Stored raw (the strings/bools/enum-names DPG widgets return), so restoration
+    is just ``dpg.set_value`` regardless of the input kind. Called before any
+    tool switch or reload so unsubmitted edits aren't dropped on the floor.
+    """
+    current = _state.get("current")
+    if current is None:
+        return
+    inputs: dict[str, Any] = {}
+    for name, tag in _state.get("input_tags", {}).items():
+        if dpg.does_item_exist(tag):
+            inputs[name] = dpg.get_value(tag)
+    last = _state.get("last_func")
+    _state["tool_states"][current.name] = {
+        "inputs": inputs,
+        "last_func_name": last.name if last else None,
+    }
+
+
+def _restore_tool_state(tool: ToolSpec) -> None:
+    saved = _state["tool_states"].get(tool.name)
+    if not saved:
+        return
+    for name, value in saved.get("inputs", {}).items():
+        tag = _state["input_tags"].get(name)
+        if tag is not None and dpg.does_item_exist(tag):
+            dpg.set_value(tag, value)
+    last_name = saved.get("last_func_name")
+    if last_name:
+        match = next((f for f in tool.funcs if f.name == last_name), None)
+        if match is not None:
+            _state["last_func"] = match
+            if dpg.does_item_exist(OUTPUTS_LAST_ACTION):
+                dpg.set_value(OUTPUTS_LAST_ACTION, f"[{match.description}]")
+
+
 def _select_tool(tool: ToolSpec):
+    _save_current_tool_state()
     _state["current"] = tool
     settings.update(selected_tool=tool.name)
     _clear_dynamic()
@@ -330,6 +374,8 @@ def _select_tool(tool: ToolSpec):
 
     dpg.add_separator(parent=parent)
     dpg.add_text("Ready.", tag=STATUS, parent=parent, color=DIM_COLOR)
+
+    _restore_tool_state(tool)
 
     # Resize handler may fire before the new layout has settled — re-measure
     # a couple of frames later to catch the final size.
