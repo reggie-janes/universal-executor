@@ -17,6 +17,7 @@ class VarSpec:
     name: str
     kind: Any
     description: str
+    tooltip: str = ""
 
 
 @dataclass
@@ -24,6 +25,7 @@ class FuncSpec:
     name: str
     description: str
     callable: Callable[[], None]
+    tooltip: str = ""
 
 
 @dataclass
@@ -78,17 +80,18 @@ def _build_spec(module: ModuleType, fallback_name: str) -> ToolSpec:
     annotations = getattr(module, "__annotations__", {}) or {}
     for var_name, ann in annotations.items():
         if isinstance(ann, Input):
-            spec.inputs.append(VarSpec(var_name, ann.kind, ann.description))
+            spec.inputs.append(VarSpec(var_name, ann.kind, ann.description, ann.tooltip))
         elif isinstance(ann, Output):
             if not hasattr(module, var_name):
                 setattr(module, var_name, "")
-            spec.outputs.append(VarSpec(var_name, str, ann.description))
+            spec.outputs.append(VarSpec(var_name, str, ann.description, ann.tooltip))
     for attr_name, attr in vars(module).items():
         if attr_name.startswith("_"):
             continue
         desc = getattr(attr, "__tool_description__", None)
         if callable(attr) and desc is not None:
-            spec.funcs.append(FuncSpec(attr_name, desc, attr))
+            tooltip = getattr(attr, "__tool_tooltip__", "") or ""
+            spec.funcs.append(FuncSpec(attr_name, desc, attr, tooltip))
     return spec
 
 

@@ -29,6 +29,8 @@ NUMBER_FIELD_WIDTH = 140
 COMBO_FIELD_WIDTH = 200
 TEXT_FIELD_WIDTH = 260
 
+TOOLTIP_DELAY = 0.8
+
 
 _state: dict[str, Any] = {
     "tools": [],
@@ -225,6 +227,13 @@ def _clear_dynamic():
     _state["output_tags"].clear()
 
 
+def add_tooltip(parent_tag: int | str, text: str) -> None:
+    if not text:
+        return
+    with dpg.tooltip(parent=parent_tag, delay=TOOLTIP_DELAY, hide_on_activity=False):
+        dpg.add_text(text)
+
+
 def _fit_viewport_to_content(*_args, **_kwargs):
     """Resize the OS viewport to hug the natural size of the window contents.
 
@@ -280,7 +289,8 @@ def _select_tool(tool: ToolSpec):
     else:
         with dpg.group(horizontal=True, parent=parent):
             for fn in tool.funcs:
-                dpg.add_button(label=fn.description, callback=make_run_cb(fn))
+                btn = dpg.add_button(label=fn.description, callback=make_run_cb(fn))
+                add_tooltip(btn, fn.tooltip)
 
     # Inputs (left) and Outputs (right) side-by-side.
     section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH

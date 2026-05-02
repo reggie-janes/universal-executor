@@ -73,9 +73,10 @@ def build_inputs_section(tool: ToolSpec) -> None:
         dpg.add_table_column()
         for var in tool.inputs:
             with dpg.table_row():
-                dpg.add_text(var.description)
+                label_tag = dpg.add_text(var.description)
                 tag = _make_input_widget(var, tool.module)
                 layout._state["input_tags"][var.name] = tag
+                layout.add_tooltip(label_tag, var.tooltip)
 
 
 def build_outputs_section(tool: ToolSpec) -> None:
@@ -90,9 +91,10 @@ def build_outputs_section(tool: ToolSpec) -> None:
         dpg.add_table_column()
         for var in tool.outputs:
             with dpg.table_row():
-                dpg.add_text(var.description)
+                label_tag = dpg.add_text(var.description)
                 tag = _make_output_widget(var, tool.module)
                 layout._state["output_tags"][var.name] = tag
+                layout.add_tooltip(label_tag, var.tooltip)
 
 
 def push_inputs(tool: ToolSpec) -> None:

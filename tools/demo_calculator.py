@@ -2,31 +2,31 @@ from tool_api import input, output, export
 
 tool_name = "Simple calculator"
 
-a: input(int, "var a") = 0
-b: input(int, "var b") = 0
+a: input(int, "var a", tooltip="left operand") = 0
+b: input(int, "var b", tooltip="right operand") = 0
 
-result: output("result")
+result: output("result", tooltip="output of the most recent action")
 
 
-@export("plus")
+@export("plus", tooltip="a + b")
 def plus():
     global result
     result = str(a + b)
 
 
-@export("minus")
+@export("minus", tooltip="a - b")
 def minus():
     global result
     result = str(a - b)
 
 
-@export("multiply")
+@export("multiply", tooltip="a × b")
 def multiply():
     global result
     result = str(a * b)
 
 
-@export("divide")
+@export("divide", tooltip="a ÷ b (b must be non-zero)")
 def divide():
     global result
     if b == 0:

@@ -11,17 +11,21 @@ a string to each output — including soft-error messages like
 ``"undefined, can't divide by 0"``. The error popup is reserved for
 uncaught exceptions (programmer mistakes).
 
+Each of ``input``, ``output``, and ``export`` accepts an optional ``tooltip``
+string. When non-empty, the UI shows it as a hover tooltip on the
+corresponding label/widget/button.
+
 Example:
 
     from tool_api import input, output, export
 
     tool_name = "Adder"
 
-    a: input(int, "first")  = 0
-    b: input(int, "second") = 0
+    a: input(int, "first",  tooltip="left operand")  = 0
+    b: input(int, "second", tooltip="right operand") = 0
     s: output("sum")
 
-    @export("add")
+    @export("add", tooltip="compute a + b")
     def add():
         global s
         s = str(a + b)
@@ -35,24 +39,27 @@ from typing import Any
 class Input:
     kind: Any
     description: str
+    tooltip: str = ""
 
 
 @dataclass(frozen=True)
 class Output:
     description: str
+    tooltip: str = ""
 
 
-def input(kind: Any, description: str) -> Input:  # noqa: A001 — DSL name
-    return Input(kind, description)
+def input(kind: Any, description: str, tooltip: str = "") -> Input:  # noqa: A001 — DSL name
+    return Input(kind, description, tooltip)
 
 
-def output(description: str) -> Output:
-    return Output(description)
+def output(description: str, tooltip: str = "") -> Output:
+    return Output(description, tooltip)
 
 
-def export(description: str):
+def export(description: str, tooltip: str = ""):
     def decorator(fn):
         fn.__tool_description__ = description
+        fn.__tool_tooltip__ = tooltip
         return fn
     return decorator
 
