@@ -35,7 +35,7 @@ a: input(int, "first")  = 0    # public input
 b: input(int, "second") = 0    # public input
 s: output("sum")               # public output (always str)
 
-_HIDDEN = 42                   # private — underscore prefix
+HIDDEN = 42                    # not in UI — no input()/output() annotation
 
 @export("add")
 def add():
@@ -46,7 +46,8 @@ def add():
 Rules:
 
 - Public I/O is declared as **type annotations** whose value is `input(...)` / `output(...)`. They are not real types — the scanner reads `module.__annotations__`.
-- Anything underscore-prefixed (`_helper`, `_C`) is private and never appears in the UI.
+- The UI surface of a tool file is exactly: variables annotated with `input()` / `output()`, plus functions decorated with `@export`. Anything else (constants, helper functions, imports) is invisible regardless of whether its name starts with `_`.
+- File naming inside `tools/`: the scanner **skips** any file matching `_*.py` (treat as a private/helper module) or `*_test.py` (pytest files). Use either prefix for files that live in `tools/` but are not themselves tools.
 - Exported functions read inputs as module globals and must use `global` to write outputs.
 - Outputs are always strings. Use them for both successful results and **soft errors** like `"undefined, can't divide by 0"` — see `tools/demo_calculator.py`. The error popup is reserved for uncaught exceptions.
 

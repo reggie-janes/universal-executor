@@ -32,7 +32,11 @@ def plus():
     y = str(a + b)
 ```
 
-Underscore-prefixed names (`_C`, `_helper`) are private. Files named `*_test.py` and `_*.py` are skipped by the scanner. Exported functions read inputs as module globals and must use `global` to write outputs.
+The UI surface of a tool file is exactly: annotations whose value is an `Input` / `Output` instance, plus callables tagged with `__tool_description__` (i.e. `@export`-decorated). Other names — constants, helper functions, imports — are invisible to the UI regardless of whether they start with `_`.
+
+File-level skips happen in `ui/scanner.py::_is_tool_file`: the scanner ignores `_*.py` (treat as private/helper modules — e.g. shared utilities co-located with tools) and `*_test.py` (pytest files). Use either prefix for `.py` files inside `tools/` that should not show up as tools.
+
+Exported functions read inputs as module globals and must use `global` to write outputs.
 
 Inputs: `kind` may be `int | float | bool`, an `Enum` subclass, or a `list/tuple` of choices — see `ui/layout.py::_make_input_widget`.
 
