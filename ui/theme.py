@@ -24,7 +24,7 @@ DARK = {
     "FRAME_HI":   (82, 82, 91, 255),
     "FRAME_AC":   (113, 113, 122, 255),
     "TITLE":      (39, 39, 42, 255),
-    "TITLE_ACTIVE": (37, 99, 235, 255),   # blue-600
+    "TITLE_ACTIVE": (29, 78, 216, 255),   # blue-700 (darker than BUTTON_HI so close-X hover shows)
     "BUTTON":     (59, 130, 246, 255),    # blue-500
     "BUTTON_HI":  (37, 99, 235, 255),     # blue-600
     "CHECK":      (59, 130, 246, 255),    # blue-500
@@ -43,7 +43,7 @@ LIGHT = {
     "FRAME_HI":   (212, 212, 216, 255),
     "FRAME_AC":   (161, 161, 170, 255),
     "TITLE":      (228, 228, 231, 255),
-    "TITLE_ACTIVE": (161, 161, 170, 255), # zinc-400
+    "TITLE_ACTIVE": (212, 212, 216, 255), # zinc-300 (lighter than BUTTON_HI so close-X hover shows)
     "BUTTON":     (212, 212, 216, 255),   # zinc-300
     "BUTTON_HI":  (161, 161, 170, 255),   # zinc-400
     "CHECK":      (24, 24, 27, 255),      # zinc-900 (matches sun icon)
