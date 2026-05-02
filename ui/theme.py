@@ -52,6 +52,7 @@ _state: dict = {
     "mode": "dark",
     "themes": {},   # mode -> theme tag
     "listeners": [],
+    "bold_font": None,
 }
 
 
@@ -62,6 +63,10 @@ def apply(assets_dir: Path, mode: str | None = None) -> None:
     if mode in _state["themes"]:
         _state["mode"] = mode
     _bind_current()
+
+
+def bold_font() -> int | str | None:
+    return _state["bold_font"]
 
 
 def set_mode(mode: str) -> None:
@@ -96,11 +101,14 @@ def _bind_current() -> None:
 
 
 def _load_fonts(assets_dir: Path) -> None:
-    font_path = assets_dir / "Roboto-VariableFont_wdth,wght.ttf"
-    if not font_path.exists():
+    regular_path = assets_dir / "Roboto-Regular.ttf"
+    bold_path = assets_dir / "Roboto-Bold.ttf"
+    if not regular_path.exists():
         return
     with dpg.font_registry():
-        default_font = dpg.add_font(str(font_path), BASE_FONT_SIZE)
+        default_font = dpg.add_font(str(regular_path), BASE_FONT_SIZE)
+        if bold_path.exists():
+            _state["bold_font"] = dpg.add_font(str(bold_path), BASE_FONT_SIZE)
     dpg.bind_font(default_font)
 
 

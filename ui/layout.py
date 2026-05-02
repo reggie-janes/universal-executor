@@ -259,6 +259,12 @@ def _clear_dynamic():
     _state["last_func"] = None
 
 
+def _bind_bold(item: int | str) -> None:
+    font = theme.bold_font()
+    if font is not None:
+        dpg.bind_item_font(item, font)
+
+
 def add_tooltip(parent_tag: int | str, text: str) -> None:
     if not text:
         return
@@ -354,7 +360,8 @@ def _select_tool(tool: ToolSpec):
     parent = DYNAMIC_AREA
 
     # Actions
-    dpg.add_text("Actions", parent=parent)
+    actions_label = dpg.add_text("Actions", parent=parent)
+    _bind_bold(actions_label)
     if not tool.funcs:
         dpg.add_text("(no exported functions)", color=DIM_COLOR, parent=parent)
     else:

@@ -64,7 +64,7 @@ def _make_output_widget(var: VarSpec, module) -> int | str:
 
 
 def build_inputs_section(tool: ToolSpec) -> None:
-    dpg.add_text("Inputs")
+    layout._bind_bold(dpg.add_text("Inputs"))
     if not tool.inputs:
         dpg.add_text("(no inputs)", color=layout.DIM_COLOR)
         return
@@ -83,7 +83,7 @@ def build_inputs_section(tool: ToolSpec) -> None:
 
 def build_outputs_section(tool: ToolSpec) -> None:
     with dpg.group(horizontal=True):
-        dpg.add_text("Outputs")
+        layout._bind_bold(dpg.add_text("Outputs"))
         dpg.add_text("", tag=layout.OUTPUTS_LAST_ACTION, color=layout.DIM_COLOR)
     if not tool.outputs:
         dpg.add_text("(no outputs)", color=layout.DIM_COLOR)
