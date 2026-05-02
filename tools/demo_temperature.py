@@ -10,10 +10,11 @@ class Unit(Enum):
     FAHRENHEIT = "F"
     KELVIN = "K"
 
+KELVIN_OFFSET = 273.15
 
 value:    input(float, "value")        = 0.0
-from_u:   input(Unit,  "from unit")    = Unit.CELSIUS
-to_u:     input(Unit,  "to unit")      = Unit.FAHRENHEIT
+from_u:   input(Unit,  "from unit")    = Unit.FAHRENHEIT
+to_u:     input(Unit,  "to unit")      = Unit.CELSIUS
 round_it: input(bool,  "round result") = False
 
 result: output("result")
@@ -21,17 +22,17 @@ result: output("result")
 
 def _to_kelvin(v: float, u: Unit) -> float:
     if u is Unit.CELSIUS:
-        return v + 273.15
+        return v + KELVIN_OFFSET
     if u is Unit.FAHRENHEIT:
-        return (v - 32.0) * 5.0 / 9.0 + 273.15
+        return (v - 32.0) * 5.0 / 9.0 + KELVIN_OFFSET
     return v
 
 
 def _from_kelvin(k: float, u: Unit) -> float:
     if u is Unit.CELSIUS:
-        return k - 273.15
+        return k - KELVIN_OFFSET
     if u is Unit.FAHRENHEIT:
-        return (k - 273.15) * 9.0 / 5.0 + 32.0
+        return (k - KELVIN_OFFSET) * 9.0 / 5.0 + 32.0
     return k
 
 
