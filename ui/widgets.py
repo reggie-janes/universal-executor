@@ -22,9 +22,10 @@ def _parse_si_number(text: str) -> float:
     """Parse ``text`` as a number, optionally with a single SI suffix.
 
     Examples: "10k" -> 10000, "2.5M" -> 2_500_000, "5m" -> 0.005.
-    Note that ``m`` is milli and ``M`` is mega — case matters.
+    Note that ``m`` is milli and ``M`` is mega — case matters. Comma is
+    accepted as a decimal separator alongside the dot ("2,5" == "2.5").
     """
-    text = text.strip()
+    text = text.strip().replace(",", ".")
     if not text:
         return 0.0
     last = text[-1]
