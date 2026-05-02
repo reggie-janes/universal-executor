@@ -49,6 +49,10 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
     _state["tools"] = tools
     _state["rescan"] = rescan
 
+    saved_name = settings.load().get("selected_tool")
+    initial = next((t for t in tools if t.name == saved_name), None) \
+        or (tools[0] if tools else None)
+
     with dpg.window(tag=MAIN_WINDOW, label="Universal Executor",
                     no_title_bar=True, no_move=True, no_resize=True, no_collapse=True,
                     no_scrollbar=True):
@@ -56,7 +60,7 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
             dpg.add_text("Tool")
             dpg.add_combo(
                 items=[t.name for t in tools],
-                default_value=tools[0].name if tools else "",
+                default_value=initial.name if initial else "",
                 tag=TOOL_COMBO,
                 callback=_on_tool_changed,
                 width=360,
@@ -73,8 +77,8 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
     _bind_no_scrollbar_theme(MAIN_WINDOW)
     _ensure_wheel_handler()
     _ensure_resize_handler()
-    if tools:
-        _select_tool(tools[0])
+    if initial is not None:
+        _select_tool(initial)
 
 
 def _build_theme_toggle() -> None:
@@ -265,6 +269,7 @@ def _fit_viewport_to_content(*_args, **_kwargs):
 
 def _select_tool(tool: ToolSpec):
     _state["current"] = tool
+    settings.update(selected_tool=tool.name)
     _clear_dynamic()
     parent = DYNAMIC_AREA
 
