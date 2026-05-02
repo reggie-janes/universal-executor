@@ -38,6 +38,7 @@ _state: dict[str, Any] = {
     "input_tags": {},
     "output_tags": {},
     "rescan": None,
+    "last_func": None,
 }
 
 # Imported after _state and constants because widgets/runner do
@@ -79,6 +80,7 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
     _bind_no_scrollbar_theme(MAIN_WINDOW)
     _ensure_wheel_handler()
     _ensure_resize_handler()
+    _ensure_key_handler()
     if initial is not None:
         _select_tool(initial)
 
@@ -170,6 +172,29 @@ def _ensure_resize_handler() -> None:
     _state["resize_handler"] = True
 
 
+def _ensure_key_handler() -> None:
+    """Re-run the last action when Enter is pressed in a focused input."""
+    if _state.get("key_handler"):
+        return
+    with dpg.handler_registry():
+        dpg.add_key_press_handler(key=dpg.mvKey_Return, callback=_on_enter)
+        dpg.add_key_press_handler(key=dpg.mvKey_NumPadEnter, callback=_on_enter)
+    _state["key_handler"] = True
+
+
+def _on_enter(*_args, **_kwargs):
+    tool = _state.get("current")
+    if tool is None or not tool.funcs:
+        return
+    input_tags = _state.get("input_tags", {})
+    if not any(dpg.is_item_focused(t) for t in input_tags.values()):
+        return
+    last = _state.get("last_func")
+    fn = last if last in tool.funcs else tool.funcs[0]
+    from . import runner
+    runner._run(fn)
+
+
 def _on_wheel(sender, app_data):
     """Cycle the tool combo when the wheel turns over (or while focused on) it.
 
@@ -225,6 +250,7 @@ def _clear_dynamic():
     dpg.delete_item(DYNAMIC_AREA, children_only=True)
     _state["input_tags"].clear()
     _state["output_tags"].clear()
+    _state["last_func"] = None
 
 
 def add_tooltip(parent_tag: int | str, text: str) -> None:
