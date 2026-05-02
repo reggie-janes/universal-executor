@@ -27,7 +27,7 @@ Drop a file into `tools/`. Click **Reload** in the UI (or restart) to pick it up
 
 ```python
 # tools/adder.py
-from tool_api import input, output, export
+from core.tool_api import input, output, export
 
 tool_name = "Adder"            # optional; falls back to file stem
 
@@ -71,14 +71,15 @@ uv run pytest
 uv run pytest tools/demo_calculator_test.py::test_plus
 ```
 
-Pytest is configured to look in `tools/` for files matching `*_test.py`. `conftest.py` puts the repo root on `sys.path` so tests can `import tools.<name>` and `from tool_api import …`.
+Pytest is configured to look in `tools/` for files matching `*_test.py`. `tools/__init__.py` makes pytest's default `prepend` import mode add the repo root to `sys.path`, so tests can `import tools.<name>` and `from core.tool_api import …`.
 
 ## Project layout
 
 ```
 main.py                 # entry point — sets up viewport, theme, scans tools, builds UI
-tool_api.py             # author-facing DSL: input(), output(), @export
-ui/scanner.py           # discovers tools/*.py and builds ToolSpec via reflection
+core/tool_api.py        # author-facing DSL: input(), output(), @export
+core/scanner.py         # discovers tools/*.py and builds ToolSpec via reflection
+core/settings.py        # JSON-backed user-preferences store
 ui/layout.py            # builds the dynamic window for the selected tool
 ui/theme.py             # dark "tailwind-ish" theme + Roboto font loading
 tools/                  # drop-in tool modules

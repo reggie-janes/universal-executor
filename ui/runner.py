@@ -5,8 +5,9 @@ import traceback
 
 import dearpygui.dearpygui as dpg
 
+from core.scanner import FuncSpec
+
 from . import layout, widgets
-from .scanner import FuncSpec
 
 
 def make_run_cb(fn: FuncSpec):

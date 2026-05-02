@@ -9,7 +9,9 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
-from tool_api import Input, Output
+from .tool_api import Input, Output
+
+TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
 
 
 @dataclass
@@ -35,6 +37,10 @@ class ToolSpec:
     inputs: list[VarSpec] = field(default_factory=list)
     outputs: list[VarSpec] = field(default_factory=list)
     funcs: list[FuncSpec] = field(default_factory=list)
+
+
+def rescan() -> list[ToolSpec]:
+    return discover_tools(TOOLS_DIR)
 
 
 def discover_tools(tools_dir: Path) -> list[ToolSpec]:

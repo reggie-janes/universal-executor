@@ -2,16 +2,10 @@ from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
-import settings
-from ui import layout, scanner, theme
+from core import scanner, settings
+from ui import layout, theme
 
-ROOT = Path(__file__).parent
-TOOLS_DIR = ROOT / "tools"
-ASSETS_DIR = ROOT / "assets"
-
-
-def _rescan():
-    return scanner.discover_tools(TOOLS_DIR)
+ASSETS_DIR = Path(__file__).parent / "assets"
 
 
 def _save_window_pos() -> None:
@@ -34,7 +28,7 @@ def main() -> None:
         viewport_kwargs["y_pos"] = saved["window_y"]
     dpg.create_viewport(**viewport_kwargs)
     theme.apply(ASSETS_DIR, mode=saved.get("theme"))
-    layout.build_window(_rescan(), rescan=_rescan)
+    layout.build_window(scanner.rescan(), rescan=scanner.rescan)
     dpg.setup_dearpygui()
     dpg.set_exit_callback(_save_window_pos)
     dpg.show_viewport()

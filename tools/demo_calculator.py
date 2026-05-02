@@ -1,4 +1,4 @@
-from tool_api import input, output, export
+from core.tool_api import input, output, export
 
 tool_name = "Simple calculator"
 

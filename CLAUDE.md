@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Run the app: `uv run python main.py` (or double-click `run-uv.vbs` / `run-global.vbs` on Windows).
 - Run tests: `uv run pytest`. Single test: `uv run pytest tools/demo_calculator_test.py::test_plus`.
-- Pytest is configured in `pyproject.toml` with `testpaths = ["tools"]` and `python_files = ["*_test.py"]`. `conftest.py` puts the repo root on `sys.path` so tests can `import tools.<name>` and `from tool_api import …`.
+- Pytest is configured in `pyproject.toml` with `testpaths = ["tools"]` and `python_files = ["*_test.py"]`. `tools/__init__.py` makes pytest's default `prepend` import mode walk up to the repo root and add it to `sys.path`, so tests can `import tools.<name>` and `from core.tool_api import …`.
 
 ### Dev container quirk (Linux side of a shared Windows folder)
 
@@ -18,11 +18,13 @@ Bash tool calls run a non-interactive shell that does NOT source `~/.bashrc`, so
 
 The app is an auto-generated DearPyGui frontend for plain-Python "tool" modules. The author writes a normal `.py` file; the app discovers it, builds the UI by reflection, and wires button clicks to function calls.
 
-### The DSL (`tool_api.py`)
+### The DSL (`core/tool_api.py`)
 
 Tool authors import `input`, `output`, `export`. Public I/O is declared as **type annotations whose value is an `Input(kind, description)` or `Output(description)` instance** — not as real types:
 
 ```python
+from core.tool_api import input, output, export
+
 a: input(int, "var a") = 0   # public input, read by exported funcs
 y: output("var y")           # public output, written by exported funcs (always str)
 
@@ -34,7 +36,7 @@ def plus():
 
 The UI surface of a tool file is exactly: annotations whose value is an `Input` / `Output` instance, plus callables tagged with `__tool_description__` (i.e. `@export`-decorated). Other names — constants, helper functions, imports — are invisible to the UI regardless of whether they start with `_`.
 
-File-level skips happen in `ui/scanner.py::_is_tool_file`: the scanner ignores `_*.py` (treat as private/helper modules — e.g. shared utilities co-located with tools) and `*_test.py` (pytest files). Use either prefix for `.py` files inside `tools/` that should not show up as tools.
+File-level skips happen in `core/scanner.py::_is_tool_file`: the scanner ignores `_*.py` (treat as private/helper modules — e.g. shared utilities co-located with tools) and `*_test.py` (pytest files). Use either prefix for `.py` files inside `tools/` that should not show up as tools.
 
 Exported functions read inputs as module globals and must use `global` to write outputs.
 
@@ -42,9 +44,9 @@ Inputs: `kind` may be `int | float | bool`, an `Enum` subclass, or a `list/tuple
 
 Outputs: always `str`, defaulting to `""` (the scanner pre-populates the module attribute if the author omitted an assignment). Use the output for both successful results and **soft-error messages** like `"undefined, can't divide by 0"` (see `tools/demo_calculator.py::divide`). The error popup is reserved for uncaught exceptions — i.e. genuine programmer mistakes.
 
-### Discovery (`ui/scanner.py`)
+### Discovery (`core/scanner.py`)
 
-`discover_tools(tools_dir)` walks `tools/*.py`, loads each as a uniquely-named module via `importlib.util.spec_from_file_location` (so two tools can share variable names without colliding), and builds a `ToolSpec` by:
+`scanner.rescan()` is the entry point used by `main.py`; it just calls `discover_tools(TOOLS_DIR)` (where `TOOLS_DIR = <repo>/tools`). `discover_tools(tools_dir)` walks `tools/*.py`, loads each as a uniquely-named module via `importlib.util.spec_from_file_location` (so two tools can share variable names without colliding), and builds a `ToolSpec` by:
 
 1. Reading `module.__annotations__` and keeping entries whose annotation is an `Input` or `Output` dataclass instance.
 2. Walking `vars(module)` for non-underscore callables tagged with `__tool_description__` (set by `@export`).

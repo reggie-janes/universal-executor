@@ -6,10 +6,10 @@ from typing import Any, Callable
 
 import dearpygui.dearpygui as dpg
 
-import settings
+from core import settings
+from core.scanner import ToolSpec
 
 from . import theme
-from .scanner import ToolSpec
 
 
 MAIN_WINDOW = "uex_main"

@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import dearpygui.dearpygui as dpg
 
+from core.scanner import ToolSpec, VarSpec, is_choices_kind, is_enum_kind
+
 from . import layout
-from .scanner import ToolSpec, VarSpec, is_choices_kind, is_enum_kind
 
 
 _SI_SUFFIXES = {
