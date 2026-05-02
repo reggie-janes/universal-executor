@@ -26,17 +26,19 @@ def _run(fn: FuncSpec) -> None:
     if tool is None:
         return
     layout._state["last_func"] = fn
-    if dpg.does_item_exist(layout.OUTPUTS_LAST_ACTION):
-        dpg.set_value(layout.OUTPUTS_LAST_ACTION, f"[{fn.description}]")
-    dpg.set_value(layout.STATUS, f"Running {fn.name}()...")
+    tb: str | None = None
     try:
         widgets.push_inputs(tool)
         fn.callable()
         widgets.pull_outputs(tool)
-        dpg.set_value(layout.STATUS, f"Last run: {fn.name}() OK")
+        status = "OK"
     except Exception:
         tb = traceback.format_exc()
-        dpg.set_value(layout.STATUS, f"Last run: {fn.name}() FAILED")
+        status = "ERROR"
+    layout._state["last_status"] = status
+    if dpg.does_item_exist(layout.OUTPUTS_LAST_ACTION):
+        dpg.set_value(layout.OUTPUTS_LAST_ACTION, f"[{fn.description}, {status}]")
+    if tb is not None:
         _show_error_modal(f"Error in {fn.name}()", tb)
 
 

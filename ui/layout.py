@@ -17,7 +17,6 @@ TOOL_COMBO = "uex_tool_combo"
 TOP_BAR = "uex_top_bar"
 TOP_SEPARATOR = "uex_top_separator"
 DYNAMIC_AREA = "uex_dynamic_area"
-STATUS = "uex_status"
 OUTPUTS_LAST_ACTION = "uex_outputs_last_action"
 TOP_SPACER = "uex_top_spacer"
 THEME_TOGGLE = "uex_theme_toggle"
@@ -40,9 +39,11 @@ _state: dict[str, Any] = {
     "output_tags": {},
     "rescan": None,
     "last_func": None,
+    "last_status": None,
     # Per-tool snapshot taken on tool switch so unsubmitted input edits and the
     # last-action label survive when the user returns to a tool. Keyed by
-    # tool.name -> {"inputs": {var_name: raw_widget_value}, "last_func_name": str | None}.
+    # tool.name -> {"inputs": {var_name: raw_widget_value},
+    #               "last_func_name": str | None, "last_status": str | None}.
     "tool_states": {},
 }
 
@@ -257,6 +258,7 @@ def _clear_dynamic():
     _state["input_tags"].clear()
     _state["output_tags"].clear()
     _state["last_func"] = None
+    _state["last_status"] = None
 
 
 def _bind_bold(item: int | str) -> None:
@@ -332,6 +334,7 @@ def _save_current_tool_state() -> None:
     _state["tool_states"][current.name] = {
         "inputs": inputs,
         "last_func_name": last.name if last else None,
+        "last_status": _state.get("last_status"),
     }
 
 
@@ -348,8 +351,12 @@ def _restore_tool_state(tool: ToolSpec) -> None:
         match = next((f for f in tool.funcs if f.name == last_name), None)
         if match is not None:
             _state["last_func"] = match
+            status = saved.get("last_status")
+            _state["last_status"] = status
             if dpg.does_item_exist(OUTPUTS_LAST_ACTION):
-                dpg.set_value(OUTPUTS_LAST_ACTION, f"[{match.description}]")
+                label = (f"[{match.description}, {status}]"
+                         if status else f"[{match.description}]")
+                dpg.set_value(OUTPUTS_LAST_ACTION, label)
 
 
 def _select_tool(tool: ToolSpec):
@@ -378,9 +385,6 @@ def _select_tool(tool: ToolSpec):
         dpg.add_spacer(width=24)
         with dpg.group(width=section_width):
             build_outputs_section(tool)
-
-    dpg.add_separator(parent=parent)
-    dpg.add_text("Ready.", tag=STATUS, parent=parent, color=DIM_COLOR)
 
     _restore_tool_state(tool)
 
