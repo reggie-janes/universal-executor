@@ -2,45 +2,34 @@ from tool_api import input, output, export
 
 tool_name = "Simple calculator"
 
-_C = 10
-
-def _helper():
-    return a * 2
-
 a: input(int, "var a") = 0
 b: input(int, "var b") = 0
 
-y: output("var y")
-z: output("var z")
+result: output("result")
 
 
-@export("function plus")
+@export("plus")
 def plus():
-    global y, z
-    z = str(a + b)
-    y = "0"
+    global result
+    result = str(a + b)
 
 
-@export("function for minus")
+@export("minus")
 def minus():
-    global y, z
-    z = str(a - b)
-    y = str(a * b + 2)
+    global result
+    result = str(a - b)
 
 
-@export("just some function")
-def some_func():
-    global y, z
-    z = "0"
-    y = str(a + _helper() - _C)
+@export("multiply")
+def multiply():
+    global result
+    result = str(a * b)
 
 
-@export("function divide")
+@export("divide")
 def divide():
-    global y, z
+    global result
     if b == 0:
-        z = "undefined, can't divide by 0"
-        y = ""
+        result = "undefined, can't divide by 0"
         return
-    z = str(a / b)
-    y = ""
+    result = str(a / b)
