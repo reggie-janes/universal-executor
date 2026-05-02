@@ -18,6 +18,7 @@ TOP_BAR = "uex_top_bar"
 TOP_SEPARATOR = "uex_top_separator"
 DYNAMIC_AREA = "uex_dynamic_area"
 STATUS = "uex_status"
+OUTPUTS_LAST_ACTION = "uex_outputs_last_action"
 TOP_SPACER = "uex_top_spacer"
 THEME_TOGGLE = "uex_theme_toggle"
 

@@ -82,7 +82,9 @@ def build_inputs_section(tool: ToolSpec) -> None:
 
 
 def build_outputs_section(tool: ToolSpec) -> None:
-    dpg.add_text("Outputs")
+    with dpg.group(horizontal=True):
+        dpg.add_text("Outputs")
+        dpg.add_text("", tag=layout.OUTPUTS_LAST_ACTION, color=layout.DIM_COLOR)
     if not tool.outputs:
         dpg.add_text("(no outputs)", color=layout.DIM_COLOR)
         return

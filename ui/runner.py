@@ -26,6 +26,8 @@ def _run(fn: FuncSpec) -> None:
     if tool is None:
         return
     layout._state["last_func"] = fn
+    if dpg.does_item_exist(layout.OUTPUTS_LAST_ACTION):
+        dpg.set_value(layout.OUTPUTS_LAST_ACTION, f"[{fn.description}]")
     dpg.set_value(layout.STATUS, f"Running {fn.name}()...")
     try:
         widgets.push_inputs(tool)
