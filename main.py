@@ -2,6 +2,7 @@ from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
+import settings
 from ui import layout, scanner, theme
 
 ROOT = Path(__file__).parent
@@ -22,7 +23,7 @@ def main() -> None:
         small_icon=str(ASSETS_DIR / "app.ico"),
         large_icon=str(ASSETS_DIR / "app.ico"),
     )
-    theme.apply(ASSETS_DIR)
+    theme.apply(ASSETS_DIR, mode=settings.load().get("theme"))
     layout.build_window(_rescan(), rescan=_rescan)
     dpg.setup_dearpygui()
     dpg.show_viewport()

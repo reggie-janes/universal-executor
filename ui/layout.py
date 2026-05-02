@@ -7,6 +7,8 @@ from typing import Any, Callable
 
 import dearpygui.dearpygui as dpg
 
+import settings
+
 from . import theme
 from .scanner import FuncSpec, ToolSpec, VarSpec, is_choices_kind, is_enum_kind
 
@@ -82,8 +84,9 @@ def _build_theme_toggle() -> None:
 
 
 def _on_theme_toggle(*_args, **_kwargs):
-    theme.toggle_mode()
+    mode = theme.toggle_mode()
     _redraw_theme_icon()
+    settings.update(theme=mode)
 
 
 def _redraw_theme_icon() -> None:

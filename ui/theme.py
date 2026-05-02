@@ -53,10 +53,12 @@ _state: dict = {
 }
 
 
-def apply(assets_dir: Path) -> None:
+def apply(assets_dir: Path, mode: str | None = None) -> None:
     _load_fonts(assets_dir)
     _state["themes"]["dark"] = _build_theme(DARK)
     _state["themes"]["light"] = _build_theme(LIGHT)
+    if mode in _state["themes"]:
+        _state["mode"] = mode
     _bind_current()
 
 
