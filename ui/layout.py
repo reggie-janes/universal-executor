@@ -1,11 +1,13 @@
 """Build/rebuild the main DearPyGui layout for the selected tool."""
 from __future__ import annotations
 
+import math
 import traceback
 from typing import Any, Callable
 
 import dearpygui.dearpygui as dpg
 
+from . import theme
 from .scanner import FuncSpec, ToolSpec, VarSpec, is_choices_kind, is_enum_kind
 
 
@@ -15,6 +17,11 @@ TOP_BAR = "uex_top_bar"
 TOP_SEPARATOR = "uex_top_separator"
 DYNAMIC_AREA = "uex_dynamic_area"
 STATUS = "uex_status"
+TOP_SPACER = "uex_top_spacer"
+THEME_TOGGLE = "uex_theme_toggle"
+
+THEME_ICON_SIZE = 28
+DIM_COLOR = (113, 113, 122, 255)  # zinc-500: legible on both palettes
 
 LABEL_COLUMN_WIDTH = 120
 NUMBER_FIELD_WIDTH = 140
@@ -48,6 +55,10 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
                 width=360,
             )
             dpg.add_button(label="Reload", callback=_on_reload)
+            # Spacer width is recomputed in _fit_viewport_to_content so the
+            # toggle stays glued to the right edge of the content area.
+            dpg.add_spacer(width=24, tag=TOP_SPACER)
+            _build_theme_toggle()
         dpg.add_separator(tag=TOP_SEPARATOR)
         dpg.add_group(tag=DYNAMIC_AREA)
 
@@ -57,6 +68,59 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
     _ensure_resize_handler()
     if tools:
         _select_tool(tools[0])
+
+
+def _build_theme_toggle() -> None:
+    """Drawlist showing a sun (light mode) or moon (dark mode); click toggles."""
+    dpg.add_drawlist(width=THEME_ICON_SIZE, height=THEME_ICON_SIZE, tag=THEME_TOGGLE)
+    if not _state.get("theme_toggle_handler"):
+        with dpg.item_handler_registry() as reg:
+            dpg.add_item_clicked_handler(callback=_on_theme_toggle)
+        _state["theme_toggle_handler"] = reg
+    dpg.bind_item_handler_registry(THEME_TOGGLE, _state["theme_toggle_handler"])
+    _redraw_theme_icon()
+
+
+def _on_theme_toggle(*_args, **_kwargs):
+    theme.toggle_mode()
+    _redraw_theme_icon()
+
+
+def _redraw_theme_icon() -> None:
+    if not dpg.does_item_exist(THEME_TOGGLE):
+        return
+    dpg.delete_item(THEME_TOGGLE, children_only=True)
+    palette = theme.current_palette()
+    if theme.current_mode() == "dark":
+        _draw_moon(THEME_TOGGLE, palette["TEXT"], palette["BG"])
+    else:
+        _draw_sun(THEME_TOGGLE, palette["TEXT"])
+
+
+def _draw_sun(parent: str, fg: tuple) -> None:
+    cx = cy = THEME_ICON_SIZE / 2
+    r = THEME_ICON_SIZE * 0.20
+    dpg.draw_circle((cx, cy), r, color=fg, fill=fg, parent=parent)
+    inner = r + 3
+    outer = THEME_ICON_SIZE / 2 - 1
+    for i in range(8):
+        a = i * math.pi / 4
+        x1, y1 = cx + math.cos(a) * inner, cy + math.sin(a) * inner
+        x2, y2 = cx + math.cos(a) * outer, cy + math.sin(a) * outer
+        dpg.draw_line((x1, y1), (x2, y2), color=fg, thickness=2, parent=parent)
+
+
+def _draw_moon(parent: str, fg: tuple, bg: tuple) -> None:
+    """Crescent: a filled disk masked by a second disk in the window-bg color.
+
+    The drawlist itself is transparent, so painting the mask in ``bg`` (the
+    palette's WindowBg) blends seamlessly with the surrounding top bar.
+    """
+    cx = cy = THEME_ICON_SIZE / 2
+    r = THEME_ICON_SIZE * 0.40
+    dpg.draw_circle((cx, cy), r, color=fg, fill=fg, parent=parent)
+    dpg.draw_circle((cx + r * 0.55, cy - r * 0.20), r * 0.92,
+                    color=bg, fill=bg, parent=parent)
 
 
 def _bind_no_scrollbar_theme(item: str) -> None:
@@ -179,6 +243,17 @@ def _fit_viewport_to_content(*_args, **_kwargs):
     if abs(new_h - dpg.get_viewport_height()) > 1:
         dpg.set_viewport_height(new_h)
 
+    # Stretch (or shrink) the top-bar spacer so the theme toggle hugs the
+    # right edge of whichever section ends up wider — the top bar or the
+    # dynamic area below it. Converges in 1-2 resize cycles.
+    if dpg.does_item_exist(TOP_SPACER):
+        delta = int(round(dyn_size[0] - top_size[0]))
+        if delta != 0:
+            current = int(dpg.get_item_configuration(TOP_SPACER).get("width", 24))
+            new_spacer = max(0, current + delta)
+            if new_spacer != current:
+                dpg.configure_item(TOP_SPACER, width=new_spacer)
+
 
 def _select_tool(tool: ToolSpec):
     _state["current"] = tool
@@ -188,7 +263,7 @@ def _select_tool(tool: ToolSpec):
     # Actions
     dpg.add_text("Actions", parent=parent)
     if not tool.funcs:
-        dpg.add_text("(no exported functions)", color=(161, 161, 170, 255), parent=parent)
+        dpg.add_text("(no exported functions)", color=DIM_COLOR, parent=parent)
     else:
         with dpg.group(horizontal=True, parent=parent):
             for fn in tool.funcs:
@@ -204,7 +279,7 @@ def _select_tool(tool: ToolSpec):
             _build_outputs_section(tool)
 
     dpg.add_separator(parent=parent)
-    dpg.add_text("Ready.", tag=STATUS, parent=parent, color=(161, 161, 170, 255))
+    dpg.add_text("Ready.", tag=STATUS, parent=parent, color=DIM_COLOR)
 
     # Resize handler may fire before the new layout has settled — re-measure
     # a couple of frames later to catch the final size.
@@ -214,7 +289,7 @@ def _select_tool(tool: ToolSpec):
 def _build_inputs_section(tool: ToolSpec) -> None:
     dpg.add_text("Inputs")
     if not tool.inputs:
-        dpg.add_text("(no inputs)", color=(161, 161, 170, 255))
+        dpg.add_text("(no inputs)", color=DIM_COLOR)
         return
     with dpg.table(header_row=False, resizable=False,
                    policy=dpg.mvTable_SizingFixedFit,
@@ -231,7 +306,7 @@ def _build_inputs_section(tool: ToolSpec) -> None:
 def _build_outputs_section(tool: ToolSpec) -> None:
     dpg.add_text("Outputs")
     if not tool.outputs:
-        dpg.add_text("(no outputs)", color=(161, 161, 170, 255))
+        dpg.add_text("(no outputs)", color=DIM_COLOR)
         return
     with dpg.table(header_row=False, resizable=False,
                    policy=dpg.mvTable_SizingFixedFit,
