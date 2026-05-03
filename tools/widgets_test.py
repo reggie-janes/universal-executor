@@ -3,7 +3,6 @@ from decimal import ROUND_HALF_EVEN
 
 import pytest
 
-import ui.layout  # noqa: F401  (resolves the ui.widgets <-> ui.layout circular import)
 from ui.widgets import _parse_si_number
 
 

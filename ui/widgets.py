@@ -7,7 +7,17 @@ import dearpygui.dearpygui as dpg
 
 from core.scanner import ToolSpec, VarSpec, is_choices_kind, is_enum_kind
 
-from . import layout
+from . import state
+from .state import (
+    COMBO_FIELD_WIDTH,
+    DIM_COLOR,
+    LABEL_COLUMN_WIDTH,
+    NUMBER_FIELD_WIDTH,
+    OUTPUTS_LAST_ACTION,
+    TEXT_FIELD_WIDTH,
+    add_tooltip,
+    bind_bold,
+)
 
 
 _SI_SUFFIXES = {
@@ -49,77 +59,77 @@ def _make_input_widget(var: VarSpec, module) -> int | str:
     kind = var.kind
     if kind is int:
         return dpg.add_input_text(default_value=str(int(current or 0)),
-                                  width=layout.NUMBER_FIELD_WIDTH)
+                                  width=NUMBER_FIELD_WIDTH)
     if kind is float:
         return dpg.add_input_text(default_value=format(float(current or 0.0), ".6g"),
-                                  width=layout.NUMBER_FIELD_WIDTH)
+                                  width=NUMBER_FIELD_WIDTH)
     if kind is bool:
         return dpg.add_checkbox(default_value=bool(current))
     if kind is str:
         return dpg.add_input_text(default_value="" if current is None else str(current),
-                                  width=layout.TEXT_FIELD_WIDTH)
+                                  width=TEXT_FIELD_WIDTH)
     if is_enum_kind(kind):
         items = [_enum_display_label(m) for m in kind]
         if current is not None and current.__class__ is kind:
             default = _enum_display_label(current)
         else:
             default = items[0] if items else ""
-        return dpg.add_combo(items=items, default_value=default, width=layout.COMBO_FIELD_WIDTH)
+        return dpg.add_combo(items=items, default_value=default, width=COMBO_FIELD_WIDTH)
     if is_choices_kind(kind):
         items = [str(c) for c in kind]
         default = str(current) if current is not None else (items[0] if items else "")
-        return dpg.add_combo(items=items, default_value=default, width=layout.COMBO_FIELD_WIDTH)
+        return dpg.add_combo(items=items, default_value=default, width=COMBO_FIELD_WIDTH)
     return dpg.add_input_text(default_value=str(current), readonly=True,
-                              width=layout.TEXT_FIELD_WIDTH)
+                              width=TEXT_FIELD_WIDTH)
 
 
 def _make_output_widget(var: VarSpec, module) -> int | str:
     current = getattr(module, var.name, "")
     return dpg.add_input_text(default_value=str(current), readonly=True,
-                              width=layout.TEXT_FIELD_WIDTH)
+                              width=TEXT_FIELD_WIDTH)
 
 
 def build_inputs_section(tool: ToolSpec) -> None:
-    layout._bind_bold(dpg.add_text("Inputs"))
+    bind_bold(dpg.add_text("Inputs"))
     if not tool.inputs:
-        dpg.add_text("(no inputs)", color=layout.DIM_COLOR)
+        dpg.add_text("(no inputs)", color=DIM_COLOR)
         return
     with dpg.table(header_row=False, resizable=False,
                    policy=dpg.mvTable_SizingFixedFit,
                    borders_innerH=False, borders_innerV=False):
-        dpg.add_table_column(width_fixed=True, init_width_or_weight=layout.LABEL_COLUMN_WIDTH)
+        dpg.add_table_column(width_fixed=True, init_width_or_weight=LABEL_COLUMN_WIDTH)
         dpg.add_table_column()
         for var in tool.inputs:
             with dpg.table_row():
                 label_tag = dpg.add_text(var.description)
                 tag = _make_input_widget(var, tool.module)
-                layout._state["input_tags"][var.name] = tag
-                layout.add_tooltip(label_tag, var.tooltip)
+                state._state["input_tags"][var.name] = tag
+                add_tooltip(label_tag, var.tooltip)
 
 
 def build_outputs_section(tool: ToolSpec) -> None:
     with dpg.group(horizontal=True):
-        layout._bind_bold(dpg.add_text("Outputs"))
-        dpg.add_text("", tag=layout.OUTPUTS_LAST_ACTION, color=layout.DIM_COLOR)
+        bind_bold(dpg.add_text("Outputs"))
+        dpg.add_text("", tag=OUTPUTS_LAST_ACTION, color=DIM_COLOR)
     if not tool.outputs:
-        dpg.add_text("(no outputs)", color=layout.DIM_COLOR)
+        dpg.add_text("(no outputs)", color=DIM_COLOR)
         return
     with dpg.table(header_row=False, resizable=False,
                    policy=dpg.mvTable_SizingFixedFit,
                    borders_innerH=False, borders_innerV=False):
-        dpg.add_table_column(width_fixed=True, init_width_or_weight=layout.LABEL_COLUMN_WIDTH)
+        dpg.add_table_column(width_fixed=True, init_width_or_weight=LABEL_COLUMN_WIDTH)
         dpg.add_table_column()
         for var in tool.outputs:
             with dpg.table_row():
                 label_tag = dpg.add_text(var.description)
                 tag = _make_output_widget(var, tool.module)
-                layout._state["output_tags"][var.name] = tag
-                layout.add_tooltip(label_tag, var.tooltip)
+                state._state["output_tags"][var.name] = tag
+                add_tooltip(label_tag, var.tooltip)
 
 
 def push_inputs(tool: ToolSpec) -> None:
     for var in tool.inputs:
-        tag = layout._state["input_tags"][var.name]
+        tag = state._state["input_tags"][var.name]
         raw = dpg.get_value(tag)
         kind = var.kind
         if kind is int:
@@ -138,6 +148,6 @@ def push_inputs(tool: ToolSpec) -> None:
 
 def pull_outputs(tool: ToolSpec) -> None:
     for var in tool.outputs:
-        tag = layout._state["output_tags"][var.name]
+        tag = state._state["output_tags"][var.name]
         value = getattr(tool.module, var.name)
         dpg.set_value(tag, str(value))

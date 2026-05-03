@@ -8,7 +8,8 @@ import dearpygui.dearpygui as dpg
 
 from core.scanner import TOOLS_DIR, FuncSpec, LoadError
 
-from . import layout, theme, widgets
+from . import state, theme, widgets
+from .state import OUTPUTS_LAST_ACTION
 
 
 _BODY_WIDTH_PX = 700
@@ -71,10 +72,10 @@ def make_run_cb(fn: FuncSpec):
 
 
 def _run(fn: FuncSpec) -> None:
-    tool = layout._state["current"]
+    tool = state._state["current"]
     if tool is None:
         return
-    layout._state["last_func"] = fn
+    state._state["last_func"] = fn
     tb: str | None = None
     try:
         widgets.push_inputs(tool)
@@ -84,9 +85,9 @@ def _run(fn: FuncSpec) -> None:
     except Exception:
         tb = traceback.format_exc()
         status = "ERROR"
-    layout._state["last_status"] = status
-    if dpg.does_item_exist(layout.OUTPUTS_LAST_ACTION):
-        dpg.set_value(layout.OUTPUTS_LAST_ACTION, f"[{fn.description}, {status}]")
+    state._state["last_status"] = status
+    if dpg.does_item_exist(OUTPUTS_LAST_ACTION):
+        dpg.set_value(OUTPUTS_LAST_ACTION, f"[{fn.description}, {status}]")
     if tb is not None:
         _show_error_modal(f"Error in {fn.name}()", tb)
 
