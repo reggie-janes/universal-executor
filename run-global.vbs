@@ -23,7 +23,7 @@ exitCode = shell.Run("cmd /c python -c ""import dearpygui.dearpygui"" >nul 2>&1"
 If exitCode <> 0 Then
     MsgBox "The 'dearpygui' package is not installed in the global Python." & vbCrLf & vbCrLf & _
            "Open Command Prompt or PowerShell and run:" & vbCrLf & _
-           "    pip install dearpygui" & vbCrLf & vbCrLf & _
+           "    pip install ""dearpygui>=2,<3""" & vbCrLf & vbCrLf & _
            "Then double-click this launcher again.", _
            vbExclamation, "Universal Executor"
     WScript.Quit 1

@@ -100,7 +100,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "dearpygui", specifier = ">=2.0" }]
+requires-dist = [{ name = "dearpygui", specifier = ">=2.0,<3" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8" }]
