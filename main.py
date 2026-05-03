@@ -4,7 +4,7 @@ from pathlib import Path
 import dearpygui.dearpygui as dpg
 
 from core import scanner, settings
-from ui import layout, theme
+from ui import layout, runner, theme
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 
@@ -179,6 +179,7 @@ def main() -> None:
     dpg.create_viewport(**viewport_kwargs)
     theme.apply(ASSETS_DIR, mode=saved.get("theme"))
     layout.build_window(scanner.rescan(), rescan=scanner.rescan)
+    runner.show_load_errors_modal(scanner.last_load_errors())
     dpg.setup_dearpygui()
     dpg.set_exit_callback(_save_window_pos)
     dpg.show_viewport()

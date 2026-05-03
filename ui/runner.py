@@ -5,7 +5,7 @@ import traceback
 
 import dearpygui.dearpygui as dpg
 
-from core.scanner import FuncSpec
+from core.scanner import TOOLS_DIR, FuncSpec, LoadError
 
 from . import layout, theme, widgets
 
@@ -93,6 +93,26 @@ def _run(fn: FuncSpec) -> None:
 def _estimate_body_height(body: str) -> int:
     visual_lines = max(1, body.count("\n") + 1)
     return min(visual_lines * _BODY_LINE_HEIGHT + 16, _BODY_MAX_HEIGHT)
+
+
+def show_load_errors_modal(errors: list[LoadError]) -> None:
+    """Surface scanner load failures via the same modal the runner uses for
+    uncaught exceptions. Combines all failures into one modal so a broken
+    helper doesn't open N stacked popups."""
+    if not errors:
+        return
+    base = TOOLS_DIR.parent
+    parts = []
+    for e in errors:
+        try:
+            label = str(e.path.relative_to(base))
+        except ValueError:
+            label = str(e.path)
+        parts.append(f"{label}:\n{e.traceback.rstrip()}")
+    body = "\n\n".join(parts)
+    n = len(errors)
+    title = f"Failed to load {n} tool{'s' if n != 1 else ''}"
+    _show_error_modal(title, body)
 
 
 def _show_error_modal(title: str, body: str) -> None:

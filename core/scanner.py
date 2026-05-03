@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import traceback as _tb
 from dataclasses import dataclass, field
 from enum import EnumMeta
 from pathlib import Path
@@ -39,23 +40,40 @@ class ToolSpec:
     funcs: list[FuncSpec] = field(default_factory=list)
 
 
+@dataclass
+class LoadError:
+    path: Path
+    traceback: str
+
+
+_last_errors: list[LoadError] = []
+
+
 def rescan() -> list[ToolSpec]:
-    return discover_tools(TOOLS_DIR)
+    global _last_errors
+    specs, _last_errors = discover_tools(TOOLS_DIR)
+    return specs
 
 
-def discover_tools(tools_dir: Path) -> list[ToolSpec]:
+def last_load_errors() -> list[LoadError]:
+    """Errors from the most recent ``rescan()`` / ``discover_tools()`` call."""
+    return list(_last_errors)
+
+
+def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
     specs: list[ToolSpec] = []
+    errors: list[LoadError] = []
     for path in sorted(tools_dir.glob("*.py")):
         if not _is_tool_file(path):
             continue
         try:
             module = _load_module(path)
-        except Exception as exc:  # noqa: BLE001 — surface load errors at startup
-            print(f"[scanner] failed to load {path.name}: {exc}", file=sys.stderr)
+        except Exception:
+            errors.append(LoadError(path, _tb.format_exc()))
             continue
         specs.append(_build_spec(module, fallback_name=path.stem))
     specs.sort(key=lambda s: s.name.lower())
-    return specs
+    return specs, errors
 
 
 def _is_tool_file(path: Path) -> bool:

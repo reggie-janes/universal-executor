@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 import dearpygui.dearpygui as dpg
 
-from core import settings
+from core import scanner, settings
 from core.scanner import ToolSpec
 
 from . import theme
@@ -51,7 +51,7 @@ _state: dict[str, Any] = {
 # ``from . import layout`` and read these attributes from their function
 # bodies — accessing them at import time would see a partial module.
 from .widgets import build_inputs_section, build_outputs_section  # noqa: E402
-from .runner import make_run_cb  # noqa: E402
+from .runner import make_run_cb, show_load_errors_modal  # noqa: E402
 
 
 def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) -> None:
@@ -240,6 +240,7 @@ def _on_reload():
     new_tools = _state["rescan"]()
     _state["tools"] = new_tools
     dpg.configure_item(TOOL_COMBO, items=[t.name for t in new_tools])
+    show_load_errors_modal(scanner.last_load_errors())
 
     if not new_tools:
         dpg.set_value(TOOL_COMBO, "")
