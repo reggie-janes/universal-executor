@@ -2,6 +2,8 @@
 name = "universal-executor"
 version = "0.1.0"
 description = "Auto-generated DearPyGui frontend for plain-Python tool modules"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "dearpygui>=2.0,<3",
