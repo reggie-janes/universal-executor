@@ -346,8 +346,11 @@ def _select_tool(tool: ToolSpec):
                 btn = dpg.add_button(label=fn.description, callback=make_run_cb(fn))
                 add_tooltip(btn, fn.tooltip)
 
-    # Inputs (left) and Outputs (right) side-by-side.
-    section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH
+    # Inputs (left) and Outputs (right) side-by-side. The section width adds
+    # room for table cell padding (~4px each side, two cells) on top of the
+    # label+field columns; without the buffer, the rightmost widget's rounded
+    # corners get clipped by the group bound and render as a vertical line.
+    section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH + 16
     with dpg.group(horizontal=True, parent=parent):
         with dpg.group(width=section_width):
             build_inputs_section(tool)
