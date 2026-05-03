@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Run the app: `uv run python main.py` (or double-click `run-uv.vbs` / `run-global.vbs` on Windows).
 - Run tests: `uv run pytest`. Single test: `uv run pytest tools/demo_calculator_test.py::test_plus`.
-- Pytest is configured in `pyproject.toml` with `testpaths = ["tools"]` and `python_files = ["*_test.py"]`. `tools/__init__.py` makes pytest's default `prepend` import mode walk up to the repo root and add it to `sys.path`, so tests can `import tools.<name>` and `from core.tool_api import …`.
+- Pytest is configured in `pyproject.toml` with `testpaths = ["tools", "core", "ui"]` and `python_files = ["*_test.py"]`. Tests for tool modules go in `tools/`; tests for `core/` or `ui/` modules sit next to the code they test. The `__init__.py` in each test path makes pytest's default `prepend` import mode walk up to the repo root and add it to `sys.path`, so tests can `import tools.<name>` and `from core.tool_api import …`.
 
 ### Dev container quirk (Linux side of a shared Windows folder)
 
