@@ -1,6 +1,8 @@
 """Input/output widget construction, sections, and value push/pull."""
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
+
 import dearpygui.dearpygui as dpg
 
 from core.scanner import ToolSpec, VarSpec, is_choices_kind, is_enum_kind
@@ -9,29 +11,33 @@ from . import layout
 
 
 _SI_SUFFIXES = {
-    "y": 1e-24, "z": 1e-21, "a": 1e-18, "f": 1e-15,
-    "p": 1e-12, "n": 1e-9, "u": 1e-6, "µ": 1e-6, "μ": 1e-6,
-    "m": 1e-3,
-    "k": 1e3, "K": 1e3,
-    "M": 1e6, "G": 1e9, "T": 1e12,
-    "P": 1e15, "E": 1e18, "Z": 1e21, "Y": 1e24,
+    "n": Decimal("1e-9"), "u": Decimal("1e-6"),
+    "µ": Decimal("1e-6"), "μ": Decimal("1e-6"),
+    "m": Decimal("1e-3"),
+    "k": Decimal("1e3"), "K": Decimal("1e3"),
+    "M": Decimal("1e6"), "G": Decimal("1e9"), "T": Decimal("1e12"),
 }
 
 
-def _parse_si_number(text: str) -> float:
-    """Parse ``text`` as a number, optionally with a single SI suffix.
+def _parse_si_number(text: str) -> Decimal:
+    """Parse ``text`` as an exact decimal, optionally with a single SI suffix.
 
     Examples: "10k" -> 10000, "2.5M" -> 2_500_000, "5m" -> 0.005.
     Note that ``m`` is milli and ``M`` is mega — case matters. Comma is
     accepted as a decimal separator alongside the dot ("2,5" == "2.5").
+    Returns Decimal so the int call site can preserve large values like
+    "1e20" exactly instead of going through float.
     """
     text = text.strip().replace(",", ".")
     if not text:
-        return 0.0
+        return Decimal(0)
     last = text[-1]
-    if last in _SI_SUFFIXES and len(text) > 1:
-        return float(text[:-1].strip()) * _SI_SUFFIXES[last]
-    return float(text)
+    try:
+        if last in _SI_SUFFIXES and len(text) > 1:
+            return Decimal(text[:-1].strip()) * _SI_SUFFIXES[last]
+        return Decimal(text)
+    except InvalidOperation as e:
+        raise ValueError(str(e)) from e
 
 
 def _enum_display_label(member) -> str:
@@ -117,9 +123,9 @@ def push_inputs(tool: ToolSpec) -> None:
         raw = dpg.get_value(tag)
         kind = var.kind
         if kind is int:
-            value = int(round(_parse_si_number(raw)))
+            value = int(_parse_si_number(raw).to_integral_value(rounding=ROUND_HALF_EVEN))
         elif kind is float:
-            value = _parse_si_number(raw)
+            value = float(_parse_si_number(raw))
         elif is_enum_kind(kind):
             value = next((m for m in kind if _enum_display_label(m) == raw),
                          getattr(tool.module, var.name))
