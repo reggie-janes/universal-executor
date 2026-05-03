@@ -1,6 +1,7 @@
 """Discover and introspect tool modules in a folder."""
 from __future__ import annotations
 
+import importlib
 import importlib.util
 import sys
 import traceback as _tb
@@ -63,6 +64,7 @@ def last_load_errors() -> list[LoadError]:
 def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
     specs: list[ToolSpec] = []
     errors: list[LoadError] = []
+    _reload_tools_dir_modules(tools_dir, errors)
     for path in sorted(tools_dir.glob("*.py")):
         if not _is_tool_file(path):
             continue
@@ -74,6 +76,32 @@ def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
         specs.append(_build_spec(module, fallback_name=path.stem))
     specs.sort(key=lambda s: s.name.lower())
     return specs, errors
+
+
+def _reload_tools_dir_modules(tools_dir: Path, errors: list[LoadError]) -> None:
+    """Reload cached modules whose source lives under ``tools_dir``.
+
+    Tool modules are re-executed below via ``_load_module``, but anything they
+    import (e.g. a shared ``_helpers.py`` co-located in ``tools/``) stays
+    cached in ``sys.modules`` from the first load. Without this pass, editing
+    a helper and clicking Reload would not pick up the change.
+    """
+    tools_dir_resolved = tools_dir.resolve()
+    for name, module in list(sys.modules.items()):
+        if name.startswith("_uex_tool_"):
+            continue
+        file = getattr(module, "__file__", None)
+        if not file:
+            continue
+        try:
+            mod_path = Path(file).resolve()
+            mod_path.relative_to(tools_dir_resolved)
+        except (OSError, ValueError):
+            continue
+        try:
+            importlib.reload(module)
+        except Exception:
+            errors.append(LoadError(mod_path, _tb.format_exc()))
 
 
 def _is_tool_file(path: Path) -> bool:
