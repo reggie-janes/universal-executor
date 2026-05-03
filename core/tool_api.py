@@ -64,4 +64,30 @@ def export(description: str, tooltip: str = ""):
     return decorator
 
 
-__all__ = ["input", "output", "export", "Input", "Output", "Enum"]
+class LabeledEnum(Enum):
+    """Enum whose members carry a human-friendly display label.
+
+    Call a member with a string to register its label; the call returns the
+    member itself, so it composes with default-value syntax::
+
+        class Unit(LabeledEnum):
+            CELSIUS = "C"
+
+        to_u: input(Unit, "to unit") = Unit.CELSIUS("Celsius degrees")
+
+    Members without a registered label fall back to ``self.name``.
+    """
+
+    def __call__(self, label: str) -> "LabeledEnum":
+        cls = type(self)
+        if "_labels" not in cls.__dict__:
+            cls._labels = {}
+        cls._labels[self] = label
+        return self
+
+    @property
+    def label(self) -> str:
+        return type(self).__dict__.get("_labels", {}).get(self, self.name)
+
+
+__all__ = ["input", "output", "export", "Input", "Output", "Enum", "LabeledEnum"]

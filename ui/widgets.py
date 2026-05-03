@@ -34,6 +34,10 @@ def _parse_si_number(text: str) -> float:
     return float(text)
 
 
+def _enum_display_label(member) -> str:
+    return getattr(member, "label", None) or member.name
+
+
 def _make_input_widget(var: VarSpec, module) -> int | str:
     current = getattr(module, var.name, None)
     kind = var.kind
@@ -46,8 +50,11 @@ def _make_input_widget(var: VarSpec, module) -> int | str:
     if kind is bool:
         return dpg.add_checkbox(default_value=bool(current))
     if is_enum_kind(kind):
-        items = [m.name for m in kind]
-        default = current.name if current is not None and current.__class__ is kind else (items[0] if items else "")
+        items = [_enum_display_label(m) for m in kind]
+        if current is not None and current.__class__ is kind:
+            default = _enum_display_label(current)
+        else:
+            default = items[0] if items else ""
         return dpg.add_combo(items=items, default_value=default, width=layout.COMBO_FIELD_WIDTH)
     if is_choices_kind(kind):
         items = [str(c) for c in kind]
@@ -111,7 +118,8 @@ def push_inputs(tool: ToolSpec) -> None:
         elif kind is float:
             value = _parse_si_number(raw)
         elif is_enum_kind(kind):
-            value = kind[raw] if raw in kind.__members__ else getattr(tool.module, var.name)
+            value = next((m for m in kind if _enum_display_label(m) == raw),
+                         getattr(tool.module, var.name))
         elif is_choices_kind(kind):
             value = next((c for c in kind if str(c) == raw), raw)
         else:

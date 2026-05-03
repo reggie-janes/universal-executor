@@ -1,14 +1,16 @@
-from enum import Enum
-
-from core.tool_api import input, output, export
+from core.tool_api import input, output, export, LabeledEnum
 
 tool_name = "Temperature converter"
 
 
-class Unit(Enum):
-    CELSIUS = "C"
+class Unit(LabeledEnum):
+    CELSIUS    = "C"
     FAHRENHEIT = "F"
-    KELVIN = "K"
+    KELVIN     = "K"
+
+Unit.CELSIUS    ("°C")
+Unit.FAHRENHEIT ("Fahrenheit")
+#Unit.KELVIN     ("Kelvin")  # default
 
 KELVIN_OFFSET = 273.15
 
