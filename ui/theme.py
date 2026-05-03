@@ -28,6 +28,8 @@ DARK = {
     "BUTTON":     (59, 130, 246, 255),    # blue-500
     "BUTTON_HI":  (37, 99, 235, 255),     # blue-600
     "CHECK":      (59, 130, 246, 255),    # blue-500
+    "HEADER":     (37, 99, 235, 255),     # blue-600 (combo selected item)
+    "HEADER_HI":  (59, 130, 246, 255),    # blue-500
 }
 
 # Mirror palette in light values.
@@ -47,6 +49,8 @@ LIGHT = {
     "BUTTON":     (212, 212, 216, 255),   # zinc-300
     "BUTTON_HI":  (161, 161, 170, 255),   # zinc-400
     "CHECK":      (24, 24, 27, 255),      # zinc-900 (matches sun icon)
+    "HEADER":     (212, 212, 216, 255),   # zinc-300 (combo selected item)
+    "HEADER_HI":  (161, 161, 170, 255),   # zinc-400
 }
 
 
@@ -130,9 +134,9 @@ def _build_theme(p: dict) -> int:
             dpg.add_theme_color(dpg.mvThemeCol_Button, p["BUTTON"])
             dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, p["BUTTON_HI"])
             dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, p["BUTTON_HI"])
-            dpg.add_theme_color(dpg.mvThemeCol_Header, p["ACCENT_DIM"])
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, p["ACCENT"])
-            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, p["ACCENT"])
+            dpg.add_theme_color(dpg.mvThemeCol_Header, p["HEADER"])
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderHovered, p["HEADER_HI"])
+            dpg.add_theme_color(dpg.mvThemeCol_HeaderActive, p["HEADER_HI"])
             dpg.add_theme_color(dpg.mvThemeCol_TitleBg, p["TITLE"])
             dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, p["TITLE_ACTIVE"])
             dpg.add_theme_color(dpg.mvThemeCol_ScrollbarBg, p["BG"])
