@@ -20,17 +20,21 @@ def _save_window_pos() -> None:
     settings.update(window_x=int(x), window_y=int(y))
 
 
-# Holds references that must outlive _lock_window_chrome_win32 so the WndProc
+# Holds references that must outlive _disable_maximize_win32 so the WndProc
 # callback isn't garbage-collected while Windows is still calling into it.
 _WIN32_WNDPROC_STATE: dict = {}
 
 
-def _lock_window_chrome_win32(title: str) -> None:
-    # Block user-driven maximize and border resize while leaving DPG's own
-    # programmatic resize (used by the auto-fit handler) untouched. Style-bit
-    # stripping (WS_MAXIMIZEBOX / WS_THICKFRAME) would also work, but in
-    # practice it desyncs DPG's cached viewport size and breaks set_viewport_*.
-    # Instead we subclass the WndProc and swallow the relevant input messages.
+def _disable_maximize_win32(title: str) -> None:
+    # GLFW's resizable=False (passed to create_viewport) already strips
+    # WS_THICKFRAME — border drag-resize is gone on every platform. But the
+    # DPG-bundled GLFW build doesn't strip WS_MAXIMIZEBOX, so the maximize
+    # button still works and double-clicking the title bar still maximizes.
+    # Fix that here on Windows: strip the style bit (visual disable) and
+    # subclass WndProc to swallow the maximize messages that DefWindowProc
+    # still produces. WS_MAXIMIZEBOX-only strip is safe — it leaves DPG's
+    # resize plumbing intact, unlike a WS_THICKFRAME strip which desyncs
+    # DPG's cached viewport size.
     if not sys.platform.startswith("win"):
         return
     import ctypes
@@ -80,14 +84,10 @@ def _lock_window_chrome_win32(title: str) -> None:
     SWP_NOSIZE = 0x0001
     SWP_NOZORDER = 0x0004
     SWP_FRAMECHANGED = 0x0020
-    WM_NCHITTEST = 0x0084
     WM_NCLBUTTONDBLCLK = 0x00A3
     WM_SYSCOMMAND = 0x0112
     SC_MAXIMIZE = 0xF030
     HTCAPTION = 2
-    HTMAXBUTTON = 9
-    HT_RESIZE = {10, 11, 12, 13, 14, 15, 16, 17}  # HTLEFT..HTBOTTOMRIGHT
-    HTBORDER = 18
     GW_OWNER = 4
 
     def wndproc_impl(hwnd, msg, wparam, lparam):
@@ -96,11 +96,6 @@ def _lock_window_chrome_win32(title: str) -> None:
             return 0
         if msg == WM_NCLBUTTONDBLCLK and wparam == HTCAPTION:
             return 0
-        if msg == WM_NCHITTEST:
-            result = user32.CallWindowProcW(old, hwnd, msg, wparam, lparam)
-            if result == HTMAXBUTTON or result in HT_RESIZE:
-                return HTBORDER
-            return result
         return user32.CallWindowProcW(old, hwnd, msg, wparam, lparam)
 
     def find_hwnd():
@@ -141,11 +136,9 @@ def _lock_window_chrome_win32(title: str) -> None:
         return True
 
     def grey_out_maximize_button():
-        # Visually grey out the maximize button. WS_MAXIMIZEBOX-only strip
-        # (without WS_THICKFRAME) leaves DPG's resize plumbing intact, but
-        # SWP_FRAMECHANGED is required to make the caption buttons actually
-        # repaint in their new disabled state. We defer this past the initial
-        # paint — applied immediately, the title-bar repaint doesn't take.
+        # SWP_FRAMECHANGED forces the caption buttons to actually repaint in
+        # their new disabled state. Deferred past the initial paint —
+        # applied immediately, the title-bar repaint doesn't take.
         hwnd = find_hwnd()
         if not hwnd:
             return
@@ -156,9 +149,6 @@ def _lock_window_chrome_win32(title: str) -> None:
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED,
         )
 
-    # WndProc subclass: synchronous (we deliberately avoid set_frame_callback
-    # here because layout._select_tool schedules the initial auto-fit on
-    # frame N+2 and DPG's per-frame slot would overwrite it).
     if not install_wndproc():
         def retry_wndproc():
             install_wndproc()
@@ -173,10 +163,14 @@ def main() -> None:
     saved = settings.load()
     missing = _missing_assets()
     dpg.create_context()
+    # resizable=False blocks user drag-resize and the maximize button on every
+    # platform GLFW supports. Programmatic set_viewport_width/height (used by
+    # the auto-fit handler) keeps working — the hint only gates user input.
     viewport_kwargs: dict = dict(
         title="Universal Executor",
         width=1280,
         height=800,
+        resizable=False,
     )
     icon = ASSETS_DIR / "app.ico"
     if icon.exists():
@@ -194,7 +188,7 @@ def main() -> None:
     dpg.setup_dearpygui()
     dpg.set_exit_callback(_save_window_pos)
     dpg.show_viewport()
-    _lock_window_chrome_win32("Universal Executor")
+    _disable_maximize_win32("Universal Executor")
     dpg.start_dearpygui()
     dpg.destroy_context()
 
