@@ -13,6 +13,7 @@ from .state import (
     DIM_COLOR,
     LABEL_COLUMN_WIDTH,
     NUMBER_FIELD_WIDTH,
+    OUTPUT_FIELD_HEIGHT,
     OUTPUTS_LAST_ACTION,
     TEXT_FIELD_WIDTH,
     add_tooltip,
@@ -85,8 +86,12 @@ def _make_input_widget(var: VarSpec, module) -> int | str:
 
 def _make_output_widget(var: VarSpec, module) -> int | str:
     current = getattr(module, var.name, "")
+    # multiline so DPG renders proper scrollbars for overflow — single-line
+    # readonly input_text in DPG ignores cursor drags past the edge, leaving
+    # any text wider than the field unreachable.
     return dpg.add_input_text(default_value=str(current), readonly=True,
-                              width=TEXT_FIELD_WIDTH)
+                              multiline=True,
+                              width=TEXT_FIELD_WIDTH, height=OUTPUT_FIELD_HEIGHT)
 
 
 def build_inputs_section(tool: ToolSpec) -> None:

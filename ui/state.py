@@ -28,6 +28,9 @@ LABEL_COLUMN_WIDTH = 120
 NUMBER_FIELD_WIDTH = 140
 COMBO_FIELD_WIDTH = 200
 TEXT_FIELD_WIDTH = 260
+# Outputs are multiline so long text scrolls; height kept just above one
+# line of Roboto 18 + frame padding so short results still look compact.
+OUTPUT_FIELD_HEIGHT = 38
 
 TOOLTIP_DELAY = 0.8
 
