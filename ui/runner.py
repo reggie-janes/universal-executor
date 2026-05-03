@@ -1,6 +1,7 @@
 """Run an exported tool function and surface any uncaught error in a modal."""
 from __future__ import annotations
 
+import math
 import traceback
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from .state import OUTPUTS_LAST_ACTION
 _BODY_WIDTH_PX = 700
 _BODY_LINE_HEIGHT = 22         # font 18 + line spacing
 _BODY_MAX_HEIGHT = 400         # past this the input scrolls instead of growing
+_BODY_TEXT_INSET_PX = 16       # frame padding inside the input_text widget
 
 
 _modal_chrome_theme: int | str | None = None
@@ -93,8 +95,15 @@ def _run(fn: FuncSpec) -> None:
 
 
 def _estimate_body_height(body: str) -> int:
-    visual_lines = max(1, body.count("\n") + 1)
-    return min(visual_lines * _BODY_LINE_HEIGHT + 16, _BODY_MAX_HEIGHT)
+    wrap_width = max(1, _BODY_WIDTH_PX - _BODY_TEXT_INSET_PX)
+    visual = 0
+    for line in body.split("\n"):
+        size = dpg.get_text_size(line) if line else None
+        if size is None:
+            visual += 1
+        else:
+            visual += max(1, math.ceil(size[0] / wrap_width))
+    return min(max(1, visual) * _BODY_LINE_HEIGHT + 16, _BODY_MAX_HEIGHT)
 
 
 def show_missing_assets_modal(missing: list[Path]) -> None:
