@@ -30,6 +30,7 @@ Example:
         global s
         s = str(a + b)
 """
+import inspect
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -58,10 +59,37 @@ def output(description: str, tooltip: str = "") -> Output:
 
 def export(description: str, tooltip: str = ""):
     def decorator(fn):
+        _check_no_required_params(fn)
         fn.__tool_description__ = description
         fn.__tool_tooltip__ = tooltip
         return fn
     return decorator
+
+
+_BAD_PARAM_KINDS = (
+    inspect.Parameter.POSITIONAL_ONLY,
+    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+    inspect.Parameter.KEYWORD_ONLY,
+)
+
+
+def _check_no_required_params(fn: Any) -> None:
+    try:
+        sig = inspect.signature(fn)
+    except (TypeError, ValueError):
+        return
+    required = [
+        p.name for p in sig.parameters.values()
+        if p.kind in _BAD_PARAM_KINDS and p.default is inspect.Parameter.empty
+    ]
+    if not required:
+        return
+    name = getattr(fn, "__name__", repr(fn))
+    raise TypeError(
+        f"@export def {name}({', '.join(required)}): exported tool functions "
+        f"must take no arguments. Read {', '.join(required)} as module "
+        f'globals — declare them with `{required[0]}: input(int, "...") = 0`.'
+    )
 
 
 class LabeledEnum(Enum):
