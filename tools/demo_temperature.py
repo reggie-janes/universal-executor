@@ -38,7 +38,7 @@ def _from_kelvin(k: float, u: Unit) -> float:
     return k
 
 
-@export("convert")
+@export("Convert")
 def convert():
     global result
     k = _to_kelvin(value, from_u)
