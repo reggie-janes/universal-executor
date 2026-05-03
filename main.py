@@ -7,6 +7,12 @@ from core import scanner, settings
 from ui import layout, runner, theme
 
 ASSETS_DIR = Path(__file__).parent / "assets"
+_REQUIRED_ASSETS = ("app.ico", "Roboto-Regular.ttf", "Roboto-Bold.ttf")
+
+
+def _missing_assets() -> list[Path]:
+    return [ASSETS_DIR / name for name in _REQUIRED_ASSETS
+            if not (ASSETS_DIR / name).exists()]
 
 
 def _save_window_pos() -> None:
@@ -165,20 +171,25 @@ def _lock_window_chrome_win32(title: str) -> None:
 
 def main() -> None:
     saved = settings.load()
+    missing = _missing_assets()
     dpg.create_context()
     viewport_kwargs: dict = dict(
         title="Universal Executor",
         width=1280,
         height=800,
-        small_icon=str(ASSETS_DIR / "app.ico"),
-        large_icon=str(ASSETS_DIR / "app.ico"),
     )
+    icon = ASSETS_DIR / "app.ico"
+    if icon.exists():
+        viewport_kwargs["small_icon"] = str(icon)
+        viewport_kwargs["large_icon"] = str(icon)
     if isinstance(saved.get("window_x"), int) and isinstance(saved.get("window_y"), int):
         viewport_kwargs["x_pos"] = saved["window_x"]
         viewport_kwargs["y_pos"] = saved["window_y"]
     dpg.create_viewport(**viewport_kwargs)
     theme.apply(ASSETS_DIR, mode=saved.get("theme"))
     layout.build_window(scanner.rescan(), rescan=scanner.rescan)
+    if missing:
+        runner.show_missing_assets_modal(missing)
     runner.show_load_errors_modal(scanner.last_load_errors())
     dpg.setup_dearpygui()
     dpg.set_exit_callback(_save_window_pos)

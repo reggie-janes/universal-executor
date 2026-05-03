@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import traceback
+from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
@@ -93,6 +94,30 @@ def _run(fn: FuncSpec) -> None:
 def _estimate_body_height(body: str) -> int:
     visual_lines = max(1, body.count("\n") + 1)
     return min(visual_lines * _BODY_LINE_HEIGHT + 16, _BODY_MAX_HEIGHT)
+
+
+def show_missing_assets_modal(missing: list[Path]) -> None:
+    """Surface missing bundled assets (fonts, icon) at startup. The app still
+    launches with DPG's default font / no icon, but the layout is tuned around
+    the bundled Roboto so the user should know."""
+    if not missing:
+        return
+    base = TOOLS_DIR.parent
+    items = []
+    for p in missing:
+        try:
+            items.append(str(p.relative_to(base)))
+        except ValueError:
+            items.append(str(p))
+    body = (
+        "The following bundled asset files are missing. The app will launch "
+        "with fallback rendering (default font / no icon), but the layout is "
+        "tuned around the bundled Roboto fonts and may look wrong.\n\n"
+        + "\n".join(f"  - {it}" for it in items)
+    )
+    n = len(missing)
+    title = f"Missing {n} asset{'s' if n != 1 else ''}"
+    _show_error_modal(title, body)
 
 
 def show_load_errors_modal(errors: list[LoadError]) -> None:
