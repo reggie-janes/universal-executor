@@ -1,3 +1,4 @@
+import sys
 import tempfile
 from pathlib import Path
 
@@ -6,6 +7,37 @@ from core.scanner import discover_tools
 
 def _write(td: Path, name: str, body: str) -> None:
     (td / name).write_text(body)
+
+
+def test_renamed_tool_is_evicted_from_sys_modules():
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        _write(td, "alpha.py", (
+            "from core.tool_api import output, export\n"
+            "y: output('y')\n"
+            "@export('go')\n"
+            "def go():\n"
+            "    global y\n"
+            "    y = 'alpha'\n"
+        ))
+        specs, errors = discover_tools(td)
+        assert errors == []
+        assert "_uex_tool_alpha" in sys.modules
+
+        # Rename: simulate by removing alpha.py and adding beta.py
+        (td / "alpha.py").unlink()
+        _write(td, "beta.py", (
+            "from core.tool_api import output, export\n"
+            "y: output('y')\n"
+            "@export('go')\n"
+            "def go():\n"
+            "    global y\n"
+            "    y = 'beta'\n"
+        ))
+        specs, errors = discover_tools(td)
+        assert errors == []
+        assert "_uex_tool_alpha" not in sys.modules
+        assert "_uex_tool_beta" in sys.modules
 
 
 def test_unsupported_kind_dict_surfaces_as_load_error():

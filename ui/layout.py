@@ -239,6 +239,10 @@ def _on_reload():
     _save_current_tool_state()
     new_tools = _state["rescan"]()
     _state["tools"] = new_tools
+    new_names = {t.name for t in new_tools}
+    _state["tool_states"] = {
+        k: v for k, v in _state["tool_states"].items() if k in new_names
+    }
     dpg.configure_item(TOOL_COMBO, items=[t.name for t in new_tools])
     show_load_errors_modal(scanner.last_load_errors())
 

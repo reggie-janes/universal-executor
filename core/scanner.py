@@ -14,6 +14,7 @@ from typing import Any, Callable
 from .tool_api import Input, Output
 
 TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
+_TOOL_MOD_PREFIX = "_uex_tool_"
 
 
 @dataclass
@@ -64,6 +65,7 @@ def last_load_errors() -> list[LoadError]:
 def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
     specs: list[ToolSpec] = []
     errors: list[LoadError] = []
+    _evict_stale_tool_modules(tools_dir)
     _reload_tools_dir_modules(tools_dir, errors)
     for path in sorted(tools_dir.glob("*.py")):
         if not _is_tool_file(path):
@@ -79,6 +81,22 @@ def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
     return specs, errors
 
 
+def _evict_stale_tool_modules(tools_dir: Path) -> None:
+    """Drop ``sys.modules`` entries for tool files that no longer exist.
+
+    Tools are loaded under names like ``_uex_tool_<stem>``. When a tool file
+    is renamed or deleted, the old entry would otherwise stick around forever,
+    pinning the previous module object (and its globals) in memory.
+    """
+    current_stems = {p.stem for p in tools_dir.glob("*.py") if _is_tool_file(p)}
+    for name in list(sys.modules):
+        if not name.startswith(_TOOL_MOD_PREFIX):
+            continue
+        stem = name[len(_TOOL_MOD_PREFIX):]
+        if stem not in current_stems:
+            del sys.modules[name]
+
+
 def _reload_tools_dir_modules(tools_dir: Path, errors: list[LoadError]) -> None:
     """Reload cached modules whose source lives under ``tools_dir``.
 
@@ -89,7 +107,7 @@ def _reload_tools_dir_modules(tools_dir: Path, errors: list[LoadError]) -> None:
     """
     tools_dir_resolved = tools_dir.resolve()
     for name, module in list(sys.modules.items()):
-        if name.startswith("_uex_tool_"):
+        if name.startswith(_TOOL_MOD_PREFIX):
             continue
         file = getattr(module, "__file__", None)
         if not file:
@@ -117,7 +135,7 @@ def _is_tool_file(path: Path) -> bool:
 
 
 def _load_module(path: Path) -> ModuleType:
-    mod_name = f"_uex_tool_{path.stem}"
+    mod_name = f"{_TOOL_MOD_PREFIX}{path.stem}"
     spec = importlib.util.spec_from_file_location(mod_name, path)
     if spec is None or spec.loader is None:
         raise ImportError(f"cannot create spec for {path}")
