@@ -275,7 +275,7 @@ def _bind_bold(item: int | str) -> None:
 def add_tooltip(parent_tag: int | str, text: str) -> None:
     if not text:
         return
-    with dpg.tooltip(parent=parent_tag, delay=TOOLTIP_DELAY, hide_on_activity=False):
+    with dpg.tooltip(parent=parent_tag, delay=TOOLTIP_DELAY):
         dpg.add_text(text)
 
 
