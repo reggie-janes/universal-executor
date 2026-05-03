@@ -158,4 +158,12 @@ def _build_theme(p: dict) -> int:
             dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 10, 8)
             dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 16, 16)
             dpg.add_theme_style(dpg.mvStyleVar_ScrollbarSize, 14)
+        # Tooltips inherit WindowBg + WindowPadding from mvAll, which makes
+        # them blend into the main window and look oversized for a single
+        # line. Override both: a higher-contrast PANEL_HI background and
+        # tight padding.
+        with dpg.theme_component(dpg.mvTooltip):
+            dpg.add_theme_color(dpg.mvThemeCol_WindowBg, p["PANEL_HI"])
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 8, 6)
+            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 4, 4)
     return theme
