@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-SETTINGS_PATH = Path(__file__).parent / "settings.json"
+SETTINGS_PATH = Path(__file__).resolve().parent.parent / "settings.json"
 
 
 def load() -> dict[str, Any]:
