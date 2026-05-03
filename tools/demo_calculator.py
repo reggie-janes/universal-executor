@@ -1,4 +1,5 @@
 from core.tool_api import input, output, export
+from tools import _shared
 
 tool_name = "Simple calculator"
 
@@ -33,3 +34,9 @@ def divide():
         result = "undefined, can't divide by 0"
         return
     result = str(a / b)
+
+
+@export("sqrt", tooltip="√a (a must be non-negative)")
+def sqrt():
+    global result
+    result = _shared.sqrt(a)
