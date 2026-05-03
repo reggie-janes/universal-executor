@@ -19,5 +19,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Claude Code per-machine local settings
+.claude/settings.local.json
+
 # Persisted user preferences (theme, etc.)
 settings.json
