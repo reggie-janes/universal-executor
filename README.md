@@ -46,14 +46,14 @@ def add():
 Rules:
 
 - Public I/O is declared as **type annotations** whose value is `input(...)` / `output(...)`. They are not real types — the scanner reads `module.__annotations__`.
-- The UI surface of a tool file is exactly: variables annotated with `input()` / `output()`, plus functions decorated with `@export`. Anything else (constants, helper functions, imports) is invisible regardless of whether its name starts with `_`.
+- The UI surface of a tool file is exactly: variables annotated with `input()` / `output()`, plus functions decorated with `@export`.
 - File naming inside `tools/`: the scanner **skips** any file matching `_*.py` (treat as a private/helper module) or `*_test.py` (pytest files). Use either prefix for files that live in `tools/` but are not themselves tools.
-- Exported functions read inputs as module globals and must use `global` to write outputs.
 - Outputs are always strings. Use them for both successful results and **soft errors** like `"undefined, can't divide by 0"` — see `tools/demo_calculator.py`. The error popup is reserved for uncaught exceptions.
+- (!!!) Exported functions read inputs as module globals and must use `global` to write outputs.
 
-### Supported input kinds
+### Supported input types
 
-| Kind                          | Widget                |
+| "Types"                       | Widget                |
 | ----------------------------- | --------------------- |
 | `int`                         | numeric input         |
 | `float`                       | numeric input         |
@@ -67,6 +67,7 @@ See `tools/demo_temperature.py` for an `Enum` example.
 
 ```bash
 uv run pytest
+
 # single test
 uv run pytest tools/demo_calculator_test.py::test_plus
 ```
@@ -81,6 +82,9 @@ core/tool_api.py        # author-facing DSL: input(), output(), @export
 core/scanner.py         # discovers tools/*.py and builds ToolSpec via reflection
 core/settings.py        # JSON-backed user-preferences store
 ui/layout.py            # builds the dynamic window for the selected tool
+ui/widgets.py           # input/output widget construction + push/pull of values
+ui/runner.py            # invokes an @export function; shows uncaught errors in a modal
+ui/state.py             # shared tags, dimensions, and DPG helpers (breaks the ui import cycle)
 ui/theme.py             # dark "tailwind-ish" theme + Roboto font loading
 tools/                  # drop-in tool modules
 assets/                 # app icon + Roboto fonts
