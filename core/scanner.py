@@ -158,8 +158,6 @@ def _build_spec(module: ModuleType, fallback_name: str) -> ToolSpec:
                 setattr(module, var_name, "")
             spec.outputs.append(VarSpec(var_name, str, ann.description, ann.tooltip))
     for attr_name, attr in vars(module).items():
-        if attr_name.startswith("_"):
-            continue
         desc = getattr(attr, "__tool_description__", None)
         if callable(attr) and desc is not None:
             tooltip = getattr(attr, "__tool_tooltip__", "") or ""

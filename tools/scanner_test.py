@@ -9,6 +9,23 @@ def _write(td: Path, name: str, body: str) -> None:
     (td / name).write_text(body)
 
 
+def test_underscore_prefixed_export_is_picked_up():
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        _write(td, "ok.py", (
+            "from core.tool_api import output, export\n"
+            "y: output('y')\n"
+            "@export('hidden')\n"
+            "def _hidden():\n"
+            "    global y\n"
+            "    y = 'ran'\n"
+        ))
+        specs, errors = discover_tools(td)
+        assert errors == []
+        assert len(specs) == 1
+        assert [f.name for f in specs[0].funcs] == ["_hidden"]
+
+
 def test_renamed_tool_is_evicted_from_sys_modules():
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
