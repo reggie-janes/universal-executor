@@ -70,10 +70,11 @@ def discover_tools(tools_dir: Path) -> tuple[list[ToolSpec], list[LoadError]]:
             continue
         try:
             module = _load_module(path)
+            spec = _build_spec(module, fallback_name=path.stem)
         except Exception:
             errors.append(LoadError(path, _tb.format_exc()))
             continue
-        specs.append(_build_spec(module, fallback_name=path.stem))
+        specs.append(spec)
     specs.sort(key=lambda s: s.name.lower())
     return specs, errors
 
@@ -132,6 +133,7 @@ def _build_spec(module: ModuleType, fallback_name: str) -> ToolSpec:
     annotations = getattr(module, "__annotations__", {}) or {}
     for var_name, ann in annotations.items():
         if isinstance(ann, Input):
+            _validate_input_kind(ann.kind, var_name)
             spec.inputs.append(VarSpec(var_name, ann.kind, ann.description, ann.tooltip))
         elif isinstance(ann, Output):
             if not hasattr(module, var_name):
@@ -153,3 +155,22 @@ def is_enum_kind(kind: Any) -> bool:
 
 def is_choices_kind(kind: Any) -> bool:
     return isinstance(kind, (list, tuple))
+
+
+_SUPPORTED_SCALAR_KINDS = (int, float, bool, str)
+
+
+def _kind_repr(kind: Any) -> str:
+    return getattr(kind, "__name__", None) or repr(kind)
+
+
+def _validate_input_kind(kind: Any, var_name: str) -> None:
+    if kind in _SUPPORTED_SCALAR_KINDS:
+        return
+    if is_enum_kind(kind) or is_choices_kind(kind):
+        return
+    raise TypeError(
+        f"Unsupported input kind for `{var_name}`: {_kind_repr(kind)}. "
+        f"Supported: int, float, bool, str, an Enum subclass, "
+        f"or a list/tuple of choices."
+    )

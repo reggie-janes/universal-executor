@@ -40,7 +40,7 @@ File-level skips happen in `core/scanner.py::_is_tool_file`: the scanner ignores
 
 Exported functions read inputs as module globals and must use `global` to write outputs.
 
-Inputs: `kind` may be `int | float | bool`, an `Enum` subclass, or a `list/tuple` of choices — see `ui/layout.py::_make_input_widget`.
+Inputs: `kind` may be `int | float | bool | str`, an `Enum` subclass, or a `list/tuple` of choices — see `ui/widgets.py::_make_input_widget`. Unknown kinds raise `TypeError` at scan time and surface in the load-error modal.
 
 Outputs: always `str`, defaulting to `""` (the scanner pre-populates the module attribute if the author omitted an assignment). Use the output for both successful results and **soft-error messages** like `"undefined, can't divide by 0"` (see `tools/demo_calculator.py::divide`). The error popup is reserved for uncaught exceptions — i.e. genuine programmer mistakes.
 

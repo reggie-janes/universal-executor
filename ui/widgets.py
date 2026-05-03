@@ -49,6 +49,9 @@ def _make_input_widget(var: VarSpec, module) -> int | str:
                                   width=layout.NUMBER_FIELD_WIDTH)
     if kind is bool:
         return dpg.add_checkbox(default_value=bool(current))
+    if kind is str:
+        return dpg.add_input_text(default_value="" if current is None else str(current),
+                                  width=layout.TEXT_FIELD_WIDTH)
     if is_enum_kind(kind):
         items = [_enum_display_label(m) for m in kind]
         if current is not None and current.__class__ is kind:
