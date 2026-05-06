@@ -3,8 +3,7 @@ from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
-from core import scanner, settings
-from ui import layout, runner, theme
+from core import dpi, scanner, settings
 
 ASSETS_DIR = Path(__file__).parent / "assets"
 _REQUIRED_ASSETS = ("app.ico", "Roboto-Regular.ttf", "Roboto-Bold.ttf")
@@ -161,6 +160,12 @@ def _disable_maximize_win32(title: str) -> None:
 
 def main() -> None:
     saved = settings.load()
+    # DPI awareness must precede create_context so GLFW sees a DPI-aware
+    # process at window creation; init must precede the ui imports below
+    # because ui/state.py reads dpi._s at module import time.
+    dpi.enable_awareness()
+    dpi.init(saved.get("ui_scale"))
+    from ui import layout, runner, theme  # deferred — see above
     missing = _missing_assets()
     dpg.create_context()
     # resizable=False blocks user drag-resize and the maximize button on every
@@ -168,8 +173,8 @@ def main() -> None:
     # the auto-fit handler) keeps working — the hint only gates user input.
     viewport_kwargs: dict = dict(
         title="Universal Executor",
-        width=1280,
-        height=800,
+        width=dpi._s(1280),
+        height=dpi._s(800),
         resizable=False,
     )
     icon = ASSETS_DIR / "app.ico"

@@ -8,6 +8,8 @@ from typing import Callable
 
 import dearpygui.dearpygui as dpg
 
+from core.dpi import _s
+
 
 BASE_FONT_SIZE = 18
 
@@ -111,10 +113,13 @@ def _load_fonts(assets_dir: Path) -> None:
     bold_path = assets_dir / "Roboto-Bold.ttf"
     if not regular_path.exists():
         return
+    # Rasterize at the scaled point size — set_global_font_scale would
+    # bilinear-stretch the atlas and undo the crispness gain.
+    px = _s(BASE_FONT_SIZE)
     with dpg.font_registry():
-        default_font = dpg.add_font(str(regular_path), BASE_FONT_SIZE)
+        default_font = dpg.add_font(str(regular_path), px)
         if bold_path.exists():
-            _state["bold_font"] = dpg.add_font(str(bold_path), BASE_FONT_SIZE)
+            _state["bold_font"] = dpg.add_font(str(bold_path), px)
     dpg.bind_font(default_font)
 
 
@@ -147,23 +152,23 @@ def _build_theme(p: dict) -> int:
             dpg.add_theme_color(dpg.mvThemeCol_TabHovered, p["ACCENT"])
             dpg.add_theme_color(dpg.mvThemeCol_TabActive, p["ACCENT_DIM"])
 
-            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_TabRounding, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_ScrollbarRounding, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 10, 8)
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 16, 16)
-            dpg.add_theme_style(dpg.mvStyleVar_ScrollbarSize, 14)
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, _s(6))
+            dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, _s(8))
+            dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, _s(8))
+            dpg.add_theme_style(dpg.mvStyleVar_PopupRounding, _s(8))
+            dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, _s(6))
+            dpg.add_theme_style(dpg.mvStyleVar_TabRounding, _s(6))
+            dpg.add_theme_style(dpg.mvStyleVar_ScrollbarRounding, _s(8))
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, _s(10), _s(6))
+            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, _s(10), _s(8))
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, _s(16), _s(16))
+            dpg.add_theme_style(dpg.mvStyleVar_ScrollbarSize, _s(14))
         # Tooltips inherit WindowBg + WindowPadding from mvAll, which makes
         # them blend into the main window and look oversized for a single
         # line. Override both: a higher-contrast PANEL_HI background and
         # tight padding.
         with dpg.theme_component(dpg.mvTooltip):
             dpg.add_theme_color(dpg.mvThemeCol_WindowBg, p["PANEL_HI"])
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 8, 6)
-            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, 4, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, _s(8), _s(6))
+            dpg.add_theme_style(dpg.mvStyleVar_ItemSpacing, _s(4), _s(4))
     return theme

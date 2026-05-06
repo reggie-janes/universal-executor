@@ -7,6 +7,7 @@ from typing import Any, Callable
 import dearpygui.dearpygui as dpg
 
 from core import scanner, settings
+from core.dpi import _s
 from core.scanner import ToolSpec
 
 from . import theme
@@ -49,12 +50,12 @@ def build_window(tools: list[ToolSpec], rescan: Callable[[], list[ToolSpec]]) ->
                 default_value=initial.name if initial else "",
                 tag=TOOL_COMBO,
                 callback=_on_tool_changed,
-                width=360,
+                width=_s(360),
             )
             dpg.add_button(label="Reload", callback=_on_reload)
             # Spacer width is recomputed in _fit_viewport_to_content so the
             # toggle stays glued to the right edge of the content area.
-            dpg.add_spacer(width=24, tag=TOP_SPACER)
+            dpg.add_spacer(width=_s(24), tag=TOP_SPACER)
             _build_theme_toggle()
         dpg.add_separator(tag=TOP_SEPARATOR)
         dpg.add_group(tag=DYNAMIC_AREA)
@@ -279,7 +280,7 @@ def _fit_viewport_to_content(*_args, **_kwargs):
     if dpg.does_item_exist(TOP_SPACER):
         delta = int(round(dyn_size[0] - top_size[0]))
         if delta != 0:
-            current = int(dpg.get_item_configuration(TOP_SPACER).get("width", 24))
+            current = int(dpg.get_item_configuration(TOP_SPACER).get("width", _s(24)))
             new_spacer = max(0, current + delta)
             if new_spacer != current:
                 dpg.configure_item(TOP_SPACER, width=new_spacer)
@@ -350,11 +351,11 @@ def _select_tool(tool: ToolSpec):
     # room for table cell padding (~4px each side, two cells) on top of the
     # label+field columns; without the buffer, the rightmost widget's rounded
     # corners get clipped by the group bound and render as a vertical line.
-    section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH + 16
+    section_width = LABEL_COLUMN_WIDTH + TEXT_FIELD_WIDTH + _s(16)
     with dpg.group(horizontal=True, parent=parent):
         with dpg.group(width=section_width):
             build_inputs_section(tool)
-        dpg.add_spacer(width=24)
+        dpg.add_spacer(width=_s(24))
         with dpg.group(width=section_width):
             build_outputs_section(tool)
 

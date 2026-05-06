@@ -7,16 +7,17 @@ from pathlib import Path
 
 import dearpygui.dearpygui as dpg
 
+from core.dpi import _s
 from core.scanner import TOOLS_DIR, FuncSpec, LoadError
 
 from . import state, theme, widgets
 from .state import OUTPUTS_LAST_ACTION
 
 
-_BODY_WIDTH_PX = 700
-_BODY_LINE_HEIGHT = 22         # font 18 + line spacing
-_BODY_MAX_HEIGHT = 400         # past this the input scrolls instead of growing
-_BODY_TEXT_INSET_PX = 16       # frame padding inside the input_text widget
+_BODY_WIDTH_PX = _s(700)
+_BODY_LINE_HEIGHT = _s(22)         # font 18 + line spacing
+_BODY_MAX_HEIGHT = _s(400)         # past this the input scrolls instead of growing
+_BODY_TEXT_INSET_PX = _s(16)       # frame padding inside the input_text widget
 
 
 _modal_chrome_theme: int | str | None = None
@@ -56,8 +57,8 @@ def _ensure_modal_chrome_theme() -> int | str:
     if _modal_chrome_theme is None or not dpg.does_item_exist(_modal_chrome_theme):
         with dpg.theme() as t:
             with dpg.theme_component(dpg.mvWindowAppItem):
-                dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 10, 1)
-                dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 4, 4)
+                dpg.add_theme_style(dpg.mvStyleVar_FramePadding, _s(10), _s(1))
+                dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, _s(4), _s(4))
         _modal_chrome_theme = t
     return _modal_chrome_theme
 
@@ -103,7 +104,7 @@ def _estimate_body_height(body: str) -> int:
             visual += 1
         else:
             visual += max(1, math.ceil(size[0] / wrap_width))
-    return min(max(1, visual) * _BODY_LINE_HEIGHT + 16, _BODY_MAX_HEIGHT)
+    return min(max(1, visual) * _BODY_LINE_HEIGHT + _s(16), _BODY_MAX_HEIGHT)
 
 
 def show_missing_assets_modal(missing: list[Path]) -> None:
@@ -153,7 +154,7 @@ def show_load_errors_modal(errors: list[LoadError]) -> None:
 def _show_error_modal(title: str, body: str) -> None:
     body_height = _estimate_body_height(body)
     with dpg.window(label=title, modal=True, show=True,
-                    autosize=True, pos=(80, 80)) as win:
+                    autosize=True, pos=(_s(80), _s(80))) as win:
         dpg.bind_item_theme(win, _ensure_modal_chrome_theme())
         dpg.configure_item(win, on_close=lambda *_a, **_kw: dpg.delete_item(win))
         body_input = dpg.add_input_text(default_value=body, multiline=True, readonly=True,

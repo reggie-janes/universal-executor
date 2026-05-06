@@ -9,6 +9,8 @@ from typing import Any
 
 import dearpygui.dearpygui as dpg
 
+from core.dpi import _s
+
 from . import theme
 
 
@@ -21,16 +23,16 @@ OUTPUTS_LAST_ACTION = "uex_outputs_last_action"
 TOP_SPACER = "uex_top_spacer"
 THEME_TOGGLE = "uex_theme_toggle"
 
-THEME_ICON_SIZE = 28
+THEME_ICON_SIZE = _s(28)
 DIM_COLOR = (113, 113, 122, 255)  # zinc-500: legible on both palettes
 
-LABEL_COLUMN_WIDTH = 120
-NUMBER_FIELD_WIDTH = 140
-COMBO_FIELD_WIDTH = 200
-TEXT_FIELD_WIDTH = 260
+LABEL_COLUMN_WIDTH = _s(120)
+NUMBER_FIELD_WIDTH = _s(140)
+COMBO_FIELD_WIDTH = _s(200)
+TEXT_FIELD_WIDTH = _s(260)
 # Outputs are multiline so long text scrolls; height kept just above one
 # line of Roboto 18 + frame padding so short results still look compact.
-OUTPUT_FIELD_HEIGHT = 38
+OUTPUT_FIELD_HEIGHT = _s(38)
 
 TOOLTIP_DELAY = 0.8
 
