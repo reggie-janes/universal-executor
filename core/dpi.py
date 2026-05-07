@@ -33,17 +33,28 @@ def enable_awareness() -> None:
         return
     import ctypes
 
-    for fn in (
+    # SetProcessDpiAwarenessContext takes a HANDLE-sized value; without an
+    # explicit c_void_p, ctypes encodes -4 as a 32-bit c_int and the API
+    # receives 0x00000000FFFFFFFC on x64 — it silently returns FALSE without
+    # raising, so we have to inspect the return value to know it failed and
+    # fall through. Same return-check applies to the other two: BOOL/HRESULT
+    # failures don't raise either.
+    candidates = (
         # PMv2 (Win 10 1703+): correct DPI on every monitor, handles drag.
-        lambda: ctypes.windll.user32.SetProcessDpiAwarenessContext(-4),
+        # BOOL: returns non-zero on success.
+        lambda: bool(ctypes.windll.user32.SetProcessDpiAwarenessContext(
+            ctypes.c_void_p(-4))),
         # PerMonitor (Win 8.1+): correct at startup, no live re-DPI on drag.
-        lambda: ctypes.windll.shcore.SetProcessDpiAwareness(2),
+        # HRESULT: returns 0 (S_OK) on success.
+        lambda: ctypes.windll.shcore.SetProcessDpiAwareness(2) == 0,
         # System (Vista+): single DPI for the lifetime of the process.
-        lambda: ctypes.windll.user32.SetProcessDPIAware(),
-    ):
+        # BOOL: returns non-zero on success.
+        lambda: bool(ctypes.windll.user32.SetProcessDPIAware()),
+    )
+    for fn in candidates:
         try:
-            fn()
-            return
+            if fn():
+                return
         except (OSError, AttributeError):
             continue
 
